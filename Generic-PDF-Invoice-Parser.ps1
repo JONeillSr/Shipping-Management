@@ -7,16 +7,6 @@
     and intelligent data extraction. Works with Brolyn, Ritchie Bros, Purple Wave, GovDeals,
     and other auction platforms.
 
-    v1.3.2 adds robust handling for invoices that print totals in multiple columns or where
-    label/amount order is disrupted by PDF text reflow. The script now:
-      - Captures Subtotal, Convenience Fee, Cash Total Due, and Credit Total Due using a
-        small "window" after each label to avoid drifting into nearby columns.
-      - Applies relationship logic: when Subtotal is known, CashTotal defaults to Subtotal;
-        if a Convenience Fee is present, CreditTotal = Subtotal + ConvenienceFee.
-      - Lets you choose the reported total via -PaymentMethod Cash|Credit (default Cash),
-        or interactively with -PromptPayment.
-      - Formats displayed totals with two decimals for readability.
-
 .PARAMETER PDFPath
     Path to the PDF (or .txt extracted text) invoice to parse.
 
@@ -46,6 +36,14 @@
     If both totals can be determined, you’ll be asked which one to use; otherwise the script
     falls back to -PaymentMethod.
 
+.PARAMETER StrictTotals
+    When set, the script fails (throws) if the requested total cannot be determined with
+    high confidence. Examples:
+      - Cash: requires Subtotal; if a captured “Cash Total” conflicts (e.g., equals the fee),
+        throws instead of correcting silently.
+      - Credit: requires captured “Credit Total Due” OR both Subtotal and Convenience Fee;
+        throws if captured credit conflicts with Subtotal+Fee by more than $0.01.
+
 .EXAMPLE
     .\Generic-PDF-Invoice-Parser.ps1 -PDFPath ".\invoice.pdf"
 
@@ -62,21 +60,36 @@
     Prompts you to choose Cash or Credit at runtime if both are available.
 
 .EXAMPLE
-    .\Generic-PDF-Invoice-Parser.ps1 -PDFPath ".\invoice.pdf" -OutputFormat JSON -DebugMode
+    .\Generic-PDF-Invoice-Parser.ps1 -PDFPath ".\invoice.pdf" -StrictTotals
 
-    Saves the parsed data to JSON and also writes DEBUG_ExtractedText_*.txt and DEBUG_ParsedData_*.json.
+    Fails if Cash total cannot be unambiguously determined (e.g., missing Subtotal).
+
+.EXAMPLE
+    .\Generic-PDF-Invoice-Parser.ps1 -PDFPath ".\invoice.pdf" -PaymentMethod Credit -StrictTotals
+
+    Fails if Credit total cannot be unambiguously determined (e.g., missing Convenience Fee and no
+    captured Credit Total Due, or captured credit conflicts with Subtotal+Fee).
 
 .NOTES
     Author: John O'Neill Sr.
     Company: Azure Innovators
-    Create Date: 2025-01-08
-    Version: 1.3.2
-    Change Date: 2025-10-08
+    Create Date: 10-07-2025
+    Version: 1.4.0
+    Change Date: 10-09-2025
     Change Purpose:
-      - Windowed label extraction to avoid cross-column drift
-      - Relationship-based correction for Cash/Credit totals (cash=subtotal, credit=subtotal+fee)
-      - Optional prompt for payment method selection
-      - Fixed debug prints and consistent 2-decimal formatting in Display output
+      - Add -StrictTotals failsafe with deterministic validation
+      - Keep windowed label extraction + relationship logic
+      - Confirm & format totals with two decimals
+
+.CHANGELOG
+    v1.4.0 adds a strict failsafe for totals:
+      - Windowed label extraction avoids cross-column drift.
+      - Relationship logic: Cash = Subtotal; Credit = Subtotal + Convenience Fee (when fee exists).
+      - New -StrictTotals switch: if the requested total (Cash/Credit) cannot be determined
+        unambiguously (e.g., missing fields, conflicting captures), the script throws rather than
+        guessing.
+      - -PaymentMethod Cash|Credit (default Cash) or -PromptPayment to choose at runtime.
+      - Display output uses two-decimal formatting.
 #>
 
 [CmdletBinding()]
@@ -102,7 +115,10 @@ param (
     [string]$PaymentMethod = "Cash",
 
     [Parameter(Mandatory=$false)]
-    [switch]$PromptPayment
+    [switch]$PromptPayment,
+
+    [Parameter(Mandatory=$false)]
+    [switch]$StrictTotals
 )
 
 Add-Type -AssemblyName System.Windows.Forms
@@ -339,7 +355,8 @@ function Get-InvoiceData {
           - When Subtotal is present, sets CashTotal = Subtotal. If a Convenience Fee exists,
             sets CreditTotal = Subtotal + ConvenienceFee.
           - If -PromptPayment is set and both totals are available, asks user which to use.
-          - Otherwise, selects based on -PaymentMethod (default Cash).
+          - If -StrictTotals is set, throws when required fields are missing or captured
+            amounts conflict with expected relationships.
     #>
     param (
         [Parameter(Mandatory=$true)]
@@ -514,10 +531,11 @@ function Get-InvoiceData {
         Write-Output "   📦 Found $($data.Items.Count) lot item(s)"
     }
 
-    # ====== ROBUST: Financial totals (windowed after labels + relationship rules) ======
+    # ====== ROBUST: Financial totals (windowed after labels + relationship rules + strict mode) ======
     $norm = ($Text -replace '\s+', ' ').Trim()
 
     function Get-ParsedAmount([string]$s) { if ($s) { [decimal]($s -replace ',','') } else { $null } }
+    function NearEqual([decimal]$a, [decimal]$b, [decimal]$eps = 0.01) { return [Math]::Abs($a - $b) -le $eps }
 
     function GetAmountAfterLabel([string]$text, [string]$label, [int]$window = 100) {
         $m = [regex]::Match($text, [regex]::Escape($label), 'IgnoreCase')
@@ -538,7 +556,7 @@ function Get-InvoiceData {
     $capturedCreditTotal    = GetAmountAfterLabel $norm 'Credit Total Due:'   80
     $capturedGrandTotal     = GetAmountAfterLabel $norm 'Grand Total:'        80
 
-    # Assign what we captured
+    # Assign captured values
     if ($capturedSubtotal)       { $data.Totals.Subtotal       = $capturedSubtotal }
     if ($capturedConvenienceFee) { $data.Totals.ConvenienceFee = $capturedConvenienceFee }
     if ($capturedCashTotal)      { $data.Totals.CashTotal      = $capturedCashTotal }
@@ -549,7 +567,7 @@ function Get-InvoiceData {
         $sub = [decimal]$data.Totals.Subtotal
         $fee = if ($data.Totals.ConvenienceFee) { [decimal]$data.Totals.ConvenienceFee } else { $null }
 
-        # Cash = Subtotal (Brolyn: usually no added tax/premium in sample)
+        # Cash = Subtotal
         if (-not $data.Totals.CashTotal -or ($data.Totals.CashTotal -lt $sub)) {
             $data.Totals.CashTotal = $sub
         }
@@ -568,7 +586,7 @@ function Get-InvoiceData {
         }
     }
 
-    # Choose payment method
+    # Choose payment method (may be modified by prompt)
     $selectedMethod = $PaymentMethod
     if ($PromptPayment -and $data.Totals.CashTotal -and ($data.Totals.CreditTotal -or $data.Totals.ConvenienceFee)) {
         $answer = Read-Host "Payment method for totals (Cash/Credit) [$selectedMethod]"
@@ -576,6 +594,42 @@ function Get-InvoiceData {
         elseif ($answer -match '^(?i)cash$') { $selectedMethod = 'Cash' }
     }
 
+    # StrictTotals validation (fail early on ambiguity)
+    if ($StrictTotals) {
+        if (-not $data.Totals.Subtotal) {
+            throw "StrictTotals: Missing Subtotal; cannot determine totals confidently."
+        }
+
+        $sub = [decimal]$data.Totals.Subtotal
+        $fee = if ($data.Totals.ConvenienceFee) { [decimal]$data.Totals.ConvenienceFee } else { $null }
+
+        switch ($selectedMethod) {
+            'Credit' {
+                if ($fee) {
+                    $calcCredit = $sub + $fee
+                    if ($capturedCreditTotal -and -not (NearEqual $capturedCreditTotal $calcCredit)) {
+                        throw ("StrictTotals: Captured Credit Total (${0:N2}) disagrees with Subtotal+Fee (${1:N2})." -f $capturedCreditTotal, $calcCredit)
+                    }
+                }
+                elseif (-not $capturedCreditTotal) {
+                    throw "StrictTotals: Credit total requires either a captured 'Credit Total Due' or both Subtotal and Convenience Fee."
+                }
+            }
+            default { # Cash
+                # Cash should be about Subtotal; if a captured cash exists and conflicts, fail.
+                if ($capturedCashTotal -and -not (NearEqual $capturedCashTotal $sub)) {
+                    # Special case: avoid false-positive when cash capture hit the fee (e.g., 533.36)
+                    if ($fee -and (NearEqual $capturedCashTotal $fee)) {
+                        throw ("StrictTotals: Captured Cash Total equals the Convenience Fee (${0:N2}); ambiguous layout." -f $capturedCashTotal)
+                    } else {
+                        throw ("StrictTotals: Captured Cash Total (${0:N2}) disagrees with Subtotal (${1:N2})." -f $capturedCashTotal, $sub)
+                    }
+                }
+            }
+        }
+    }
+
+    # Select total to use (post-validation)
     switch ($selectedMethod) {
         'Credit' {
             if ($data.Totals.CreditTotal) {
@@ -593,8 +647,8 @@ function Get-InvoiceData {
         }
     }
 
-    # Final sanity
-    if ($data.Totals.Total -and $data.Totals.Subtotal -and $data.Totals.Total -lt $data.Totals.Subtotal) {
+    # Final sanity (non-strict fallback)
+    if (-not $StrictTotals -and $data.Totals.Total -and $data.Totals.Subtotal -and $data.Totals.Total -lt $data.Totals.Subtotal) {
         Write-Warning "Total ($($data.Totals.Total)) < Subtotal ($($data.Totals.Subtotal)); correcting to Subtotal for Cash."
         $data.Totals.Total = $data.Totals.Subtotal
         $data.Totals.CashTotal = $data.Totals.Subtotal
@@ -747,7 +801,7 @@ function Export-InvoiceData {
 
 #region Main Execution
 Write-Output "`n╔════════════════════════════════════════════════════════╗"
-Write-Output "║     GENERIC PDF INVOICE PARSER v1.3.2                 ║"
+Write-Output "║     GENERIC PDF INVOICE PARSER v1.4.0                 ║"
 Write-Output "╚════════════════════════════════════════════════════════╝`n"
 
 Initialize-InvoicePattern
@@ -834,11 +888,12 @@ elseif ($PDFPath) {
     }
 }
 else {
-    Write-Output "Usage: .\Generic-PDF-Invoice-Parser.ps1 -PDFPath <path> [-OutputFormat JSON|Config] [-DebugMode] [-PaymentMethod Cash|Credit] [-PromptPayment]"
+    Write-Output "Usage: .\Generic-PDF-Invoice-Parser.ps1 -PDFPath <path> [-OutputFormat JSON|Config] [-DebugMode] [-PaymentMethod Cash|Credit] [-PromptPayment] [-StrictTotals]"
     Write-Output ""
     Write-Output "Examples:"
     Write-Output "  .\Generic-PDF-Invoice-Parser.ps1 -PDFPath invoice.pdf"
     Write-Output "  .\Generic-PDF-Invoice-Parser.ps1 -PDFPath invoice.pdf -PaymentMethod Credit"
     Write-Output "  .\Generic-PDF-Invoice-Parser.ps1 -PDFPath invoice.pdf -PromptPayment"
+    Write-Output "  .\Generic-PDF-Invoice-Parser.ps1 -PDFPath invoice.pdf -StrictTotals"
 }
 #endregion
