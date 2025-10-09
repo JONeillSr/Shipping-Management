@@ -1,0 +1,27 @@
+{
+  "auction_info": {
+    "special_notes": [
+      "Government facility - strict pickup appointments required",
+      "May require ID and vehicle inspection at gate",
+      "Loading assistance typically NOT available",
+      "Delivery location has dock with pallet jacks only"
+    ],
+    "pickup_datetime": "[Specify pickup appointment]",
+    "delivery_notice": "Driver must call ahead - government facility",
+    "logistics_contact": {
+      "phone": "[To be filled]",
+      "email": "[To be filled]"
+    },
+    "auction_name": "GovDeals",
+    "delivery_datetime": "[Specify delivery window]",
+    "pickup_address": "[Government facility address]"
+  },
+  "email_subject": "Freight Quote Request - [Location] to Ashtabula, OH - Pickup [Date]",
+  "shipping_requirements": {
+    "truck_types": "TBD - Please recommend based on items",
+    "weight_notes": "Weight details to be provided",
+    "total_pallets": "TBD",
+    "labor_needed": "Loading crew required - no on-site assistance"
+  },
+  "delivery_address": "1218 Lake Avenue, Ashtabula, OH 44004"
+}

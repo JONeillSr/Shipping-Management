@@ -1,0 +1,27 @@
+{
+  "auction_info": {
+    "special_notes": [
+      "Forklift available on site for loading",
+      "Delivery location has dock with pallet jacks only",
+      "Trucks must back up to dock for unloading",
+      "Total weight will NOT exceed standard truck capacity"
+    ],
+    "pickup_datetime": "[Specify pickup date/time from invoice]",
+    "delivery_notice": "Driver must call at least one hour prior to delivery",
+    "logistics_contact": {
+      "phone": "(574) 891-3111",
+      "email": "logistics@brolynauctions.com"
+    },
+    "auction_name": "Brolyn Auctions",
+    "delivery_datetime": "[Next business day] between 9:00am and 5:00pm EST",
+    "pickup_address": "[To be filled from invoice]"
+  },
+  "email_subject": "Freight Quote Request - [Location] to Ashtabula, OH - Pickup [Date]",
+  "shipping_requirements": {
+    "truck_types": "Two trucks: 53' dry van + Flatbed (tarped)",
+    "weight_notes": "Total weight unknown but will NOT exceed standard load capacity",
+    "total_pallets": "TBD",
+    "labor_needed": "1-2 people for consolidation, freight prep, and loading"
+  },
+  "delivery_address": "1218 Lake Avenue, Ashtabula, OH 44004"
+}

@@ -1,0 +1,24 @@
+{
+  "auction_info": {
+    "special_notes": [
+      "[Add special notes as needed]"
+    ],
+    "pickup_datetime": "[Pickup date and time]",
+    "delivery_notice": "[Any delivery notice requirements]",
+    "logistics_contact": {
+      "phone": "[Contact phone]",
+      "email": "[Contact email]"
+    },
+    "auction_name": "[Auction Company Name]",
+    "delivery_datetime": "[Delivery date and time window]",
+    "pickup_address": "[Full pickup address]"
+  },
+  "email_subject": "Freight Quote Request - [Pickup City, ST] to [Delivery City, ST] - Pickup [Date]",
+  "shipping_requirements": {
+    "truck_types": "TBD - Please recommend based on items",
+    "weight_notes": "Total weight will NOT exceed standard truck capacity",
+    "total_pallets": "TBD",
+    "labor_needed": "TBD based on requirements"
+  },
+  "delivery_address": "1218 Lake Avenue, Ashtabula, OH 44004"
+}

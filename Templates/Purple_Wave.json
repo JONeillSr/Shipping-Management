@@ -1,0 +1,25 @@
+{
+  "auction_info": {
+    "special_notes": [
+      "Buyer responsible for loading arrangements",
+      "Delivery location has dock with pallet jacks only"
+    ],
+    "pickup_datetime": "[Specify pickup date/time]",
+    "delivery_notice": "Driver must schedule delivery time in advance",
+    "logistics_contact": {
+      "phone": "[To be filled]",
+      "email": "[To be filled]"
+    },
+    "auction_name": "Purple Wave",
+    "delivery_datetime": "[Specify delivery window]",
+    "pickup_address": "[To be filled]"
+  },
+  "email_subject": "Freight Quote Request - [Location] to Ashtabula, OH - Pickup [Date]",
+  "shipping_requirements": {
+    "truck_types": "TBD - Please recommend based on items",
+    "weight_notes": "Weight details to be provided",
+    "total_pallets": "TBD",
+    "labor_needed": "Loading assistance required"
+  },
+  "delivery_address": "1218 Lake Avenue, Ashtabula, OH 44004"
+}

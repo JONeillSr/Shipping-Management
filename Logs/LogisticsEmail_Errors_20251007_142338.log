@@ -1,0 +1,7 @@
+[2025-10-07 14:23:39] [ERROR] Failed to generate PDF: A parameter cannot be found that matches parameter name 'Size'.
+[2025-10-07 14:23:39] [ERROR] Fatal error: A parameter cannot be found that matches parameter name 'Size'.
+[2025-10-07 14:23:39] [ERROR] Stack Trace: at <ScriptBlock>, C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Generate-LogisticsEmail.ps1: line 263
+at New-PDF, C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Documents\PowerShell\Modules\PSWritePDF\0.0.20\PSWritePDF.psm1: line 2202
+at New-LotPDF, C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Generate-LogisticsEmail.ps1: line 261
+at <ScriptBlock>, C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Generate-LogisticsEmail.ps1: line 723
+at <ScriptBlock>, <No file>: line 1

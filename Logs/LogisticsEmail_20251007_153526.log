@@ -1,0 +1,61 @@
+[2025-10-07 15:35:26] [INFO] === Logistics Email Automation Started ===
+[2025-10-07 15:35:26] [INFO] Script Version: 1.0.0
+[2025-10-07 15:35:26] [INFO] User: JohnO'NeillSr
+[2025-10-07 15:35:26] [INFO] Machine: ITSAMURAI
+[2025-10-07 15:35:26] [INFO] Starting data import process
+[2025-10-07 15:35:26] [INFO] Importing CSV data from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Heartland Auction 10-2025\Heartland 901\Logistics\PurchaseTracking_Brolyn10245_Heartland_901_20251007_143723.csv
+[2025-10-07 15:35:26] [SUCCESS] Successfully imported 19 lots
+[2025-10-07 15:35:26] [INFO] Processing lot images (max 2 per lot)
+[2025-10-07 15:35:26] [DEBUG] Lot 2029: Found 10 images, including 2 (max: 2)
+[2025-10-07 15:35:26] [INFO] Lot 2029 has 10 images, only including first 2
+[2025-10-07 15:35:26] [DEBUG] Lot 2030: Found 3 images, including 2 (max: 2)
+[2025-10-07 15:35:26] [INFO] Lot 2030 has 3 images, only including first 2
+[2025-10-07 15:35:26] [DEBUG] Lot 2031: Found 4 images, including 2 (max: 2)
+[2025-10-07 15:35:26] [INFO] Lot 2031 has 4 images, only including first 2
+[2025-10-07 15:35:26] [DEBUG] Lot 2034: Found 7 images, including 2 (max: 2)
+[2025-10-07 15:35:26] [INFO] Lot 2034 has 7 images, only including first 2
+[2025-10-07 15:35:26] [DEBUG] Lot 2038: Found 10 images, including 2 (max: 2)
+[2025-10-07 15:35:26] [INFO] Lot 2038 has 10 images, only including first 2
+[2025-10-07 15:35:26] [DEBUG] Lot 2047: Found 3 images, including 2 (max: 2)
+[2025-10-07 15:35:27] [INFO] Lot 2047 has 3 images, only including first 2
+[2025-10-07 15:35:27] [DEBUG] Lot 2048: Found 4 images, including 2 (max: 2)
+[2025-10-07 15:35:27] [INFO] Lot 2048 has 4 images, only including first 2
+[2025-10-07 15:35:27] [DEBUG] Lot 2049: Found 13 images, including 2 (max: 2)
+[2025-10-07 15:35:27] [INFO] Lot 2049 has 13 images, only including first 2
+[2025-10-07 15:35:27] [DEBUG] Lot 2050: Found 4 images, including 2 (max: 2)
+[2025-10-07 15:35:27] [INFO] Lot 2050 has 4 images, only including first 2
+[2025-10-07 15:35:27] [DEBUG] Lot 2056: Found 15 images, including 2 (max: 2)
+[2025-10-07 15:35:27] [INFO] Lot 2056 has 15 images, only including first 2
+[2025-10-07 15:35:27] [DEBUG] Lot 2057: Found 7 images, including 2 (max: 2)
+[2025-10-07 15:35:27] [INFO] Lot 2057 has 7 images, only including first 2
+[2025-10-07 15:35:27] [DEBUG] Lot 2065: Found 8 images, including 2 (max: 2)
+[2025-10-07 15:35:27] [INFO] Lot 2065 has 8 images, only including first 2
+[2025-10-07 15:35:27] [DEBUG] Lot 2071: Found 14 images, including 2 (max: 2)
+[2025-10-07 15:35:27] [INFO] Lot 2071 has 14 images, only including first 2
+[2025-10-07 15:35:27] [DEBUG] Lot 2082: Found 8 images, including 2 (max: 2)
+[2025-10-07 15:35:27] [INFO] Lot 2082 has 8 images, only including first 2
+[2025-10-07 15:35:27] [DEBUG] Lot 2085: Found 10 images, including 2 (max: 2)
+[2025-10-07 15:35:27] [INFO] Lot 2085 has 10 images, only including first 2
+[2025-10-07 15:35:27] [DEBUG] Lot 2086: Found 17 images, including 2 (max: 2)
+[2025-10-07 15:35:27] [INFO] Lot 2086 has 17 images, only including first 2
+[2025-10-07 15:35:27] [DEBUG] Lot 2351: Found 4 images, including 2 (max: 2)
+[2025-10-07 15:35:27] [INFO] Lot 2351 has 4 images, only including first 2
+[2025-10-07 15:35:27] [DEBUG] Lot 3012: Found 6 images, including 2 (max: 2)
+[2025-10-07 15:35:27] [INFO] Lot 3012 has 6 images, only including first 2
+[2025-10-07 15:35:27] [DEBUG] Lot 3037: Found 9 images, including 2 (max: 2)
+[2025-10-07 15:35:27] [INFO] Lot 3037 has 9 images, only including first 2
+[2025-10-07 15:35:27] [INFO] Including 38 of 156 total images found
+[2025-10-07 15:35:27] [INFO] Generating PDF with 19 images
+[2025-10-07 15:35:27] [INFO] Generating image report for 19 lots with 38 total images
+[2025-10-07 15:35:28] [SUCCESS] Image report generated successfully: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Heartland Auction 10-2025\Heartland 901\Logistics\AuctionLots_20251007_153527.html
+[2025-10-07 15:35:28] [INFO] Open the HTML file and use Print > Save as PDF for final PDF
+[2025-10-07 15:35:29] [INFO] Generating HTML email
+[2025-10-07 15:35:29] [INFO] Generating HTML email for 19 lots
+[2025-10-07 15:35:29] [SUCCESS] HTML email generated successfully
+[2025-10-07 15:35:29] [SUCCESS] HTML email saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Heartland Auction 10-2025\Heartland 901\Logistics\LogisticsEmail_20251007_153529.html
+[2025-10-07 15:35:29] [INFO] Opening HTML in default browser
+[2025-10-07 15:35:29] [SUCCESS] Processing report exported to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Heartland Auction 10-2025\Heartland 901\Logistics\ProcessingReport_20251007_153529.html
+[2025-10-07 15:35:37] [SUCCESS] === Logistics Email Automation Completed Successfully ===
+[2025-10-07 15:35:37] [INFO] Output files saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Heartland Auction 10-2025\Heartland 901\Logistics
+[2025-10-07 15:35:37] [INFO] Script execution completed
+[2025-10-07 15:35:37] [INFO] Total execution time: 00:00:10.7929384

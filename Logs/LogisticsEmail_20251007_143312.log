@@ -1,0 +1,30 @@
+[2025-10-07 14:33:12] [INFO] === Logistics Email Automation Started ===
+[2025-10-07 14:33:12] [INFO] Script Version: 1.0.0
+[2025-10-07 14:33:12] [INFO] User: JohnO'NeillSr
+[2025-10-07 14:33:12] [INFO] Machine: ITSAMURAI
+[2025-10-07 14:33:12] [INFO] Starting data import process
+[2025-10-07 14:33:12] [INFO] Importing CSV data from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\purchasetracking_test_Heartland_901_20251007_141059.csv
+[2025-10-07 14:33:12] [SUCCESS] Successfully imported 8 lots
+[2025-10-07 14:33:12] [INFO] Processing lot images
+[2025-10-07 14:33:12] [DEBUG] Found image for Lot 2030: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Heartland Auction 10-2025\Heartland 901\Images\2030.jpg
+[2025-10-07 14:33:12] [DEBUG] Found image for Lot 2031: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Heartland Auction 10-2025\Heartland 901\Images\2031.jpg
+[2025-10-07 14:33:12] [DEBUG] Found image for Lot 2050: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Heartland Auction 10-2025\Heartland 901\Images\2050.jpg
+[2025-10-07 14:33:12] [DEBUG] Found image for Lot 2056: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Heartland Auction 10-2025\Heartland 901\Images\2056.jpg
+[2025-10-07 14:33:12] [DEBUG] Found image for Lot 2057: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Heartland Auction 10-2025\Heartland 901\Images\2057.jpg
+[2025-10-07 14:33:12] [DEBUG] Found image for Lot 2351: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Heartland Auction 10-2025\Heartland 901\Images\2351.jpg
+[2025-10-07 14:33:12] [DEBUG] Found image for Lot 3012: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Heartland Auction 10-2025\Heartland 901\Images\3012.jpg
+[2025-10-07 14:33:12] [DEBUG] Found image for Lot 3037: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Heartland Auction 10-2025\Heartland 901\Images\3037.jpg
+[2025-10-07 14:33:12] [INFO] Generating PDF with 8 images
+[2025-10-07 14:33:12] [INFO] Generating image report for 8 lots
+[2025-10-07 14:33:12] [SUCCESS] Image report generated successfully: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Heartland Auction 10-2025\Heartland 901\Logistics\AuctionLots_20251007_143312.html
+[2025-10-07 14:33:12] [INFO] Open the HTML file and use Print > Save as PDF for final PDF
+[2025-10-07 14:33:12] [INFO] Generating HTML email
+[2025-10-07 14:33:12] [INFO] Generating HTML email for 8 lots
+[2025-10-07 14:33:12] [SUCCESS] HTML email generated successfully
+[2025-10-07 14:33:12] [SUCCESS] HTML email saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Heartland Auction 10-2025\Heartland 901\Logistics\LogisticsEmail_20251007_143312.html
+[2025-10-07 14:33:12] [INFO] Opening HTML in default browser
+[2025-10-07 14:33:12] [SUCCESS] Processing report exported to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Heartland Auction 10-2025\Heartland 901\Logistics\ProcessingReport_20251007_143312.html
+[2025-10-07 14:33:12] [SUCCESS] === Logistics Email Automation Completed Successfully ===
+[2025-10-07 14:33:12] [INFO] Output files saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Heartland Auction 10-2025\Heartland 901\Logistics
+[2025-10-07 14:33:12] [INFO] Script execution completed
+[2025-10-07 14:33:12] [INFO] Total execution time: 00:00:00.8693724

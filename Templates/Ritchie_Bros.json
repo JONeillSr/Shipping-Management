@@ -1,0 +1,26 @@
+{
+  "auction_info": {
+    "special_notes": [
+      "Loading assistance may be available on site",
+      "Delivery location has dock with pallet jacks only",
+      "Driver must call 1 hour before delivery"
+    ],
+    "pickup_datetime": "[Specify pickup date/time]",
+    "delivery_notice": "Driver must call prior to delivery",
+    "logistics_contact": {
+      "phone": "[To be filled]",
+      "email": "[To be filled]"
+    },
+    "auction_name": "Ritchie Bros",
+    "delivery_datetime": "[Specify delivery window]",
+    "pickup_address": "[To be filled]"
+  },
+  "email_subject": "Freight Quote Request - [Location] to Ashtabula, OH - Pickup [Date]",
+  "shipping_requirements": {
+    "truck_types": "TBD - Please recommend based on items",
+    "weight_notes": "Total weight will NOT exceed standard truck capacity",
+    "total_pallets": "TBD",
+    "labor_needed": "TBD based on items"
+  },
+  "delivery_address": "1218 Lake Avenue, Ashtabula, OH 44004"
+}
