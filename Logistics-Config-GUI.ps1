@@ -4,8 +4,8 @@
     
 .DESCRIPTION
     Provides a graphical interface to configure auction logistics details,
-    parse PDF invoices for automatic data extraction, manage reusable templates,
-    and generate configuration files for the email automation script.
+    parse PDF invoices using Generic-PDF-Invoice-Parser.ps1 for automatic data extraction,
+    manage reusable templates, and generate configuration files for email automation.
     
 .PARAMETER PDFInvoice
     Optional path to PDF invoice for automatic data extraction
@@ -22,10 +22,44 @@
 .NOTES
     Author: John O'Neill Sr.
     Company: Azure Innovators
-    Create Date: 2025-01-07
-    Version: 2.0.1
-    Change Date: 2025-01-08
-    Change Purpose: Fixed all PSScriptAnalyzer warnings (renamed functions: Load-Template→Import-Template, Refresh-TemplateList→Update-TemplateList, Load-TemplateToForm→Import-TemplateToForm)
+    Create Date: 01/07/2025
+    Version: 2.3.2
+    Change Date: 10/09/2025
+    Change Purpose: Removed emojis from GUI buttons for universal compatibility
+
+.CHANGELOG
+    v2.3.2 (10/09/2025): Removed emojis from GUI buttons for universal compatibility
+      - All buttons: Replaced emoji prefixes with clear text labels
+      - Template Manager header: Removed emoji for consistent rendering
+      - Ensures proper display across all Windows versions and fonts
+      
+    v2.3.1 (10/09/2025): Enhanced date parsing for subject line generation
+      - Generate-Subject: Now handles date ranges (e.g., "Tuesday 10/7 thru Friday 10/10")
+      - Generate-Subject: Added automatic year addition for dates without years
+      - Generate-Subject: Supports 5 date format patterns including ranges with day names
+      - Generate-Subject: Extracts first date from ranges as pickup date
+      
+    v2.3.0 (10/09/2025): Added ZIP codes to subject line (freight industry best practice)
+      - Generate-Subject: Now extracts and includes ZIP codes for accurate routing
+      - Generate-Subject: Enhanced to parse ZIP codes from multiline addresses
+      - Updated subject format template to show ZIP code format
+      - Added freight routing benefits to success message
+      
+    v2.2.0 (10/09/2025): Fixed structured address handling
+      - NEW: Import-ParsedDataToForm function to handle structured address objects
+      - NEW: Show-AddressSelectionDialog function for multiple pickup locations
+      - Import-ParsedDataToForm: Formats multiline addresses with Address2 support
+      - Enhanced import summary to show detailed address extraction
+      
+    v2.1.0 (10/09/2025): Integrated with Generic-PDF-Invoice-Parser.ps1
+      - NEW: Invoke-PDFInvoiceParser function to call parser with -ReturnObject
+      - Import PDF button now uses advanced parser instead of basic extraction
+      - Proper structured data handling from parser output
+      
+    v2.0.1 (01/08/2025): Fixed PSScriptAnalyzer warnings
+      - Renamed functions: Load-Template → Import-Template
+      - Renamed functions: Refresh-TemplateList → Update-TemplateList
+      - Renamed functions: Load-TemplateToForm → Import-TemplateToForm
 #>
 
 [CmdletBinding()]
@@ -39,250 +73,76 @@ param (
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName Microsoft.VisualBasic
 
-#region PDF Parsing Functions
-function Get-PDFText {
+#region PDF Parsing Integration
+function Invoke-PDFInvoiceParser {
     <#
     .SYNOPSIS
-        Extracts text from PDF using multiple fallback methods
+        Calls Generic-PDF-Invoice-Parser.ps1 and returns parsed data object
+    
+    .DESCRIPTION
+        Integrates with the Generic-PDF-Invoice-Parser.ps1 script by calling it with
+        the -ReturnObject parameter to retrieve structured invoice data that can be
+        mapped to the GUI form fields.
+    
+    .PARAMETER PDFPath
+        Full path to the PDF invoice file to parse
+    
+    .EXAMPLE
+        $data = Invoke-PDFInvoiceParser -PDFPath ".\invoice.pdf"
+    
     .NOTES
         Author: John O'Neill Sr.
         Company: Azure Innovators
-        Create Date: 2025-01-07
-        Version: 2.0.1
-        Change Date: 2025-01-08
-        Change Purpose: Fixed PSScriptAnalyzer warnings - renamed from Extract-PDFText
+        Create Date: 10/09/2025
     #>
     param (
+        [Parameter(Mandatory=$true)]
         [string]$PDFPath
     )
     
     try {
-        Write-Host "Extracting text from PDF: $PDFPath" -ForegroundColor Cyan
+        # Check if parser script exists
+        $parserScript = Join-Path $PSScriptRoot "Generic-PDF-Invoice-Parser.ps1"
         
-        # Method 1: Try using iTextSharp (if available)
-        try {
-            if (Get-Command "iTextSharp*" -ErrorAction SilentlyContinue) {
-                Write-Host "  Using iTextSharp..." -ForegroundColor Gray
-                # iTextSharp extraction would go here
-            }
-        }
-        catch { }
-        
-        # Method 2: Try using System.IO.Packaging (works for some PDFs)
-        try {
-            Add-Type -AssemblyName System.IO.Compression.FileSystem
-            $text = ""
-            
-            # Read PDF as binary
-            $bytes = [System.IO.File]::ReadAllBytes($PDFPath)
-            $pdfText = [System.Text.Encoding]::UTF8.GetString($bytes)
-            
-            # Extract readable text between stream markers
-            $pattern = 'stream(.*?)endstream'
-            $regexMatches = [regex]::Matches($pdfText, $pattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)
-            
-            foreach ($match in $regexMatches) {
-                $streamContent = $match.Groups[1].Value
-                # Try to extract readable text
-                $readableText = [regex]::Replace($streamContent, '[^\x20-\x7E\r\n]', '')
-                $text += $readableText + "`n"
-            }
-            
-            if ($text.Length -gt 100) {
-                Write-Host "  ✅ Extracted $($text.Length) characters" -ForegroundColor Green
-                return $text
-            }
-        }
-        catch {
-            Write-Host "  Method 2 failed: $_" -ForegroundColor Yellow
+        if (-not (Test-Path $parserScript)) {
+            Write-Warning "Generic-PDF-Invoice-Parser.ps1 not found in script directory"
+            Write-Host "Looking for: $parserScript" -ForegroundColor Yellow
+            return $null
         }
         
-        # Method 3: Simple binary extraction for text-based PDFs
-        try {
-            Write-Host "  Trying binary text extraction..." -ForegroundColor Gray
-            $pdfContent = [System.IO.File]::ReadAllText($PDFPath, [System.Text.Encoding]::GetEncoding('ISO-8859-1'))
-            
-            # Remove binary junk, keep readable text
-            $cleanText = [regex]::Replace($pdfContent, '[^\x20-\x7E\r\n]+', ' ')
-            $cleanText = [regex]::Replace($cleanText, '\s+', ' ')
-            
-            if ($cleanText.Length -gt 100) {
-                Write-Host "  ✅ Extracted $($cleanText.Length) characters" -ForegroundColor Green
-                return $cleanText
-            }
-        }
-        catch {
-            Write-Host "  Method 3 failed: $_" -ForegroundColor Yellow
-        }
+        Write-Host "`n📄 Calling Generic-PDF-Invoice-Parser.ps1..." -ForegroundColor Cyan
+        Write-Host "   Parser: $parserScript" -ForegroundColor Gray
+        Write-Host "   PDF: $PDFPath" -ForegroundColor Gray
         
-        # Method 4: Use external PDF to text tool if available
-        $pdfToTextPath = "C:\Program Files\PDFtk\bin\pdftotext.exe"
-        if (Test-Path $pdfToTextPath) {
-            Write-Host "  Using PDFtoText utility..." -ForegroundColor Gray
-            $tempTxtFile = [System.IO.Path]::GetTempFileName()
-            & $pdfToTextPath $PDFPath $tempTxtFile
-            if (Test-Path $tempTxtFile) {
-                $text = Get-Content $tempTxtFile -Raw
-                Remove-Item $tempTxtFile -Force
-                return $text
-            }
-        }
+        # Call the parser script with -ReturnObject to get the parsed data
+        $parsedData = & $parserScript -PDFPath $PDFPath -ReturnObject -PaymentMethod Cash
         
-        throw "All PDF extraction methods failed"
+        if ($parsedData) {
+            Write-Host "   ✅ Parsing successful!" -ForegroundColor Green
+            Write-Host "   📊 Extracted:" -ForegroundColor Cyan
+            Write-Host "      - Vendor: $($parsedData.Vendor)" -ForegroundColor White
+            Write-Host "      - Invoice: $($parsedData.InvoiceNumber)" -ForegroundColor White
+            Write-Host "      - Phones: $($parsedData.ContactInfo.Phone.Count)" -ForegroundColor White
+            Write-Host "      - Emails: $($parsedData.ContactInfo.Email.Count)" -ForegroundColor White
+            Write-Host "      - Addresses: $($parsedData.PickupAddresses.Count)" -ForegroundColor White
+            Write-Host "      - Pickup Dates: $($parsedData.PickupDates.Count)" -ForegroundColor White
+            Write-Host "      - Items: $($parsedData.Items.Count)" -ForegroundColor White
+            Write-Host "      - Special Notes: $($parsedData.SpecialNotes.Count)" -ForegroundColor White
+            
+            return $parsedData
+        }
+        else {
+            Write-Warning "Parser returned no data"
+            return $null
+        }
     }
     catch {
-        Write-Warning "Could not extract PDF text: $_"
-        Write-Host "`n💡 TIP: For best results, install a PDF text extraction tool or save invoice as text." -ForegroundColor Yellow
+        Write-Warning "Error calling PDF parser: $_"
+        Write-Host "Stack trace: $($_.ScriptStackTrace)" -ForegroundColor Yellow
         return $null
     }
-}
-
-function Get-BrolynInvoiceData {
-    <#
-    .SYNOPSIS
-        Specialized parser for Brolyn Auctions invoice format
-    .NOTES
-        Author: John O'Neill Sr.
-        Company: Azure Innovators
-        Create Date: 2025-01-07
-        Version: 1.0.1
-        Change Date: 2025-01-08
-        Change Purpose: Fixed PSScriptAnalyzer warnings - renamed from Parse-BrolynInvoice
-    #>
-    param (
-        [string]$InvoiceText
-    )
-    
-    $parsed = @{
-        AuctionCompany = "Brolyn Auctions"
-        ContactPhone = $null
-        ContactEmail = $null
-        PickupAddress = @()
-        PickupDates = @()
-        SpecialNotes = @()
-    }
-    
-    if (!$InvoiceText) { return $parsed }
-    
-    # Extract Brolyn contact info
-    if ($InvoiceText -match 'Phone:\s*\((\d{3})\)\s*(\d{3})-(\d{4})') {
-        $parsed.ContactPhone = "($($Matches[1])) $($Matches[2])-$($Matches[3])"
-    }
-    elseif ($InvoiceText -match '(\d{3})\s*-\s*(\d{3})\s*-\s*(\d{4})') {
-        $parsed.ContactPhone = "$($Matches[1])-$($Matches[2])-$($Matches[3])"
-    }
-    
-    # Extract email
-    if ($InvoiceText -match 'logistics@brolynauctions\.com') {
-        $parsed.ContactEmail = "logistics@brolynauctions.com"
-    }
-    
-    # Extract addresses - Brolyn typically has multiple locations
-    if ($InvoiceText -match '290\s+West\s+750\s+North.*?Howe.*?IN\s+46746') {
-        $parsed.PickupAddress += "290 West 750 North (Plant 208/209), Howe, IN 46746"
-    }
-    
-    if ($InvoiceText -match '1139\s+Haines\s+Blvd.*?Sturgis.*?MI\s+49091') {
-        $parsed.PickupAddress += "1139 Haines Blvd (Plant 901), Sturgis, MI 49091"
-    }
-    
-    # Extract load times for materials
-    if ($InvoiceText -match 'load times for materials.*?(\w+\s+\d{1,2}/\d{1,2})\s+thru\s+(\w+\s+\d{1,2}/\d{1,2}).*?(\d{1,2}[ap]m)\s*-\s*(\d{1,2}[ap]m)') {
-        $startDate = $Matches[1]
-        $endDate = $Matches[2]
-        $startTime = $Matches[3]
-        $endTime = $Matches[4]
-        $parsed.PickupDates += "$startDate through $endDate, $startTime to $endTime EST"
-        $parsed.SpecialNotes += "Materials (raw goods and RV components) must be picked up between specified dates"
-    }
-    
-    # Extract load times for racking/equipment
-    if ($InvoiceText -match 'load times for racking and equipment.*?(\w+\s+\d{1,2}/\d{1,2})\s+thru\s+(\w+\s+\d{1,2}/\d{1,2})') {
-        $rackStart = $Matches[1]
-        $rackEnd = $Matches[2]
-        $parsed.SpecialNotes += "Racking and equipment pickup: $rackStart through $rackEnd"
-    }
-    
-    # Extract special notes
-    if ($InvoiceText -match 'responsibility of the buyer to arrange proper rigging') {
-        $parsed.SpecialNotes += "Buyer responsible for arranging proper rigging for items requiring expert removal"
-    }
-    
-    if ($InvoiceText -match 'Items not picked up.*?will be considered abandoned') {
-        $parsed.SpecialNotes += "Items not picked up within specified windows will be considered abandoned"
-    }
-    
-    return $parsed
-}
-
-function Get-InvoiceData {
-    <#
-    .SYNOPSIS
-        Intelligently parses invoice text to extract logistics information
-    .NOTES
-        Author: John O'Neill Sr.
-        Company: Azure Innovators
-        Create Date: 2025-01-07
-        Version: 2.0.1
-        Change Date: 2025-01-08
-        Change Purpose: Fixed PSScriptAnalyzer warnings - renamed from Parse-InvoiceData
-    #>
-    param (
-        [string]$InvoiceText
-    )
-    
-    # Try vendor-specific parsers first
-    if ($InvoiceText -match 'Brolyn') {
-        Write-Host "  🎯 Detected Brolyn Auctions format" -ForegroundColor Green
-        return Get-BrolynInvoiceData -InvoiceText $InvoiceText
-    }
-    
-    # Generic parser for other vendors
-    $parsedData = @{
-        AuctionCompany = $null
-        ContactPhone = $null
-        ContactEmail = $null
-        PickupAddress = $null
-        PickupDates = @()
-        SpecialNotes = @()
-    }
-    
-    if (!$InvoiceText) { return $parsedData }
-    
-    # Extract phone numbers
-    if ($InvoiceText -match '\((\d{3})\)\s*(\d{3})-(\d{4})') {
-        $parsedData.ContactPhone = "($($Matches[1])) $($Matches[2])-$($Matches[3])"
-    }
-    elseif ($InvoiceText -match '(\d{3})[-\.\s](\d{3})[-\.\s](\d{4})') {
-        $parsedData.ContactPhone = "$($Matches[1])-$($Matches[2])-$($Matches[3])"
-    }
-    
-    # Extract email addresses
-    if ($InvoiceText -match '([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})') {
-        $parsedData.ContactEmail = $Matches[1]
-    }
-    
-    # Extract addresses
-    if ($InvoiceText -match '(\d+\s+[A-Za-z\s]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Way|Court|Ct|Highway|Hwy)[,\s]+[A-Za-z\s]+[,\s]+[A-Z]{2}\s+\d{5})') {
-        $parsedData.PickupAddress = $Matches[1]
-    }
-    
-    # Extract auction company name
-    if ($InvoiceText -match '([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+Auctions?)') {
-        $parsedData.AuctionCompany = $Matches[1]
-    }
-    
-    # Extract dates
-    $datePattern = '(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)[,\s]+\w+\s+\d{1,2}(?:st|nd|rd|th)?[,\s]+\d{4}'
-    $allDateMatches = [regex]::Matches($InvoiceText, $datePattern)
-    foreach ($dateMatch in $allDateMatches) {
-        if ($parsedData.PickupDates -notcontains $dateMatch.Value) {
-            $parsedData.PickupDates += $dateMatch.Value
-        }
-    }
-    
-    return $parsedData
 }
 #endregion
 
@@ -294,10 +154,8 @@ function Get-TemplateList {
     .NOTES
         Author: John O'Neill Sr.
         Company: Azure Innovators
-        Create Date: 2025-01-07
+        Create Date: 01/07/2025
         Version: 1.0.0
-        Change Date: 
-        Change Purpose:
     #>
     param (
         [string]$TemplateDir = ".\Templates"
@@ -314,14 +172,22 @@ function Get-TemplateList {
 function Import-Template {
     <#
     .SYNOPSIS
-        Loads template and populates form fields
+        Loads template configuration from JSON file
+    
+    .DESCRIPTION
+        Reads a template JSON file and returns the configuration object
+        that can be used to populate the GUI form fields.
+    
+    .PARAMETER TemplatePath
+        Full path to the template JSON file
+    
+    .EXAMPLE
+        $config = Import-Template -TemplatePath ".\Templates\Brolyn.json"
+    
     .NOTES
         Author: John O'Neill Sr.
         Company: Azure Innovators
-        Create Date: 2025-01-07
-        Version: 1.0.1
-        Change Date: 2025-01-08
-        Change Purpose: Fixed PSScriptAnalyzer warning - renamed from Load-Template
+        Create Date: 01/07/2025
     #>
     param (
         [string]$TemplatePath
@@ -345,10 +211,8 @@ function Save-TemplateFile {
     .NOTES
         Author: John O'Neill Sr.
         Company: Azure Innovators
-        Create Date: 2025-01-07
+        Create Date: 01/07/2025
         Version: 1.0.0
-        Change Date: 
-        Change Purpose:
     #>
     param (
         [object]$Config,
@@ -374,10 +238,8 @@ function Remove-TemplateFile {
     .NOTES
         Author: John O'Neill Sr.
         Company: Azure Innovators
-        Create Date: 2025-01-07
+        Create Date: 01/07/2025
         Version: 1.0.0
-        Change Date: 
-        Change Purpose:
     #>
     param (
         [string]$TemplatePath
@@ -441,19 +303,22 @@ $script:CommonValues = @{
 function New-ConfigurationGUI {
     <#
     .SYNOPSIS
-        Creates the main configuration GUI with Template Manager
+        Creates and displays the main configuration GUI form
+    
+    .DESCRIPTION
+        Builds the complete Windows Forms GUI with all tabs, controls, and event handlers
+        for creating and managing logistics email configurations. Includes template management,
+        PDF import, and configuration preview features.
+    
     .NOTES
         Author: John O'Neill Sr.
         Company: Azure Innovators
-        Create Date: 2025-01-07
-        Version: 2.0.1
-        Change Date: 2025-01-08
-        Change Purpose: Fixed PSScriptAnalyzer warnings - updated helper function names
+        Create Date: 01/07/2025
     #>
     
     # Create main form
     $form = New-Object System.Windows.Forms.Form
-    $form.Text = "Logistics Email Configuration Tool v2.0.1"
+    $form.Text = "Logistics Email Configuration Tool v2.3.2"
     $form.Size = New-Object System.Drawing.Size(1100, 800)
     $form.StartPosition = "CenterScreen"
     $form.FormBorderStyle = "FixedDialog"
@@ -471,7 +336,7 @@ function New-ConfigurationGUI {
     $lblTemplateHeader = New-Object System.Windows.Forms.Label
     $lblTemplateHeader.Location = New-Object System.Drawing.Point(10, 10)
     $lblTemplateHeader.Size = New-Object System.Drawing.Size(200, 25)
-    $lblTemplateHeader.Text = "📚 Template Manager"
+    $lblTemplateHeader.Text = "Template Manager"
     $lblTemplateHeader.Font = New-Object System.Drawing.Font("Segoe UI", 11, [System.Drawing.FontStyle]::Bold)
     $lblTemplateHeader.ForeColor = [System.Drawing.Color]::DarkBlue
     $pnlTemplateManager.Controls.Add($lblTemplateHeader)
@@ -486,21 +351,21 @@ function New-ConfigurationGUI {
     $btnLoadTemplate = New-Object System.Windows.Forms.Button
     $btnLoadTemplate.Location = New-Object System.Drawing.Point(10, 555)
     $btnLoadTemplate.Size = New-Object System.Drawing.Size(200, 30)
-    $btnLoadTemplate.Text = "📂 Load Selected"
+    $btnLoadTemplate.Text = "Load Selected Template"
     $btnLoadTemplate.BackColor = [System.Drawing.Color]::LightGreen
     $pnlTemplateManager.Controls.Add($btnLoadTemplate)
     
     $btnDeleteTemplate = New-Object System.Windows.Forms.Button
     $btnDeleteTemplate.Location = New-Object System.Drawing.Point(10, 590)
     $btnDeleteTemplate.Size = New-Object System.Drawing.Size(200, 30)
-    $btnDeleteTemplate.Text = "🗑️ Delete Selected"
+    $btnDeleteTemplate.Text = "Delete Selected"
     $btnDeleteTemplate.BackColor = [System.Drawing.Color]::LightCoral
     $pnlTemplateManager.Controls.Add($btnDeleteTemplate)
     
     $btnRefreshTemplates = New-Object System.Windows.Forms.Button
     $btnRefreshTemplates.Location = New-Object System.Drawing.Point(10, 625)
     $btnRefreshTemplates.Size = New-Object System.Drawing.Size(200, 30)
-    $btnRefreshTemplates.Text = "🔄 Refresh List"
+    $btnRefreshTemplates.Text = "Refresh Template List"
     $pnlTemplateManager.Controls.Add($btnRefreshTemplates)
     
     $form.Controls.Add($pnlTemplateManager)
@@ -521,8 +386,8 @@ function New-ConfigurationGUI {
     # PDF Import Button
     $btnImportPDF = New-Object System.Windows.Forms.Button
     $btnImportPDF.Location = New-Object System.Drawing.Point(20, $yPos)
-    $btnImportPDF.Size = New-Object System.Drawing.Size(200, 35)
-    $btnImportPDF.Text = "📄 Import from PDF Invoice"
+    $btnImportPDF.Size = New-Object System.Drawing.Size(250, 35)
+    $btnImportPDF.Text = "Import from PDF Invoice"
     $btnImportPDF.BackColor = [System.Drawing.Color]::LightBlue
     $btnImportPDF.Font = New-Object System.Drawing.Font("Segoe UI", 9, [System.Drawing.FontStyle]::Bold)
     $tabBasic.Controls.Add($btnImportPDF)
@@ -785,7 +650,7 @@ function New-ConfigurationGUI {
     $lblSubjectTemplate = New-Object System.Windows.Forms.Label
     $lblSubjectTemplate.Location = New-Object System.Drawing.Point(15, 30)
     $lblSubjectTemplate.Size = New-Object System.Drawing.Size(750, 20)
-    $lblSubjectTemplate.Text = "Format: Freight Quote Request - [Pickup City, ST] to [Delivery City, ST] - Pickup [Date]"
+    $lblSubjectTemplate.Text = "Format: Freight Quote Request - [City, ST ZIP] to [City, ST ZIP] - Pickup [Date]"
     $lblSubjectTemplate.ForeColor = [System.Drawing.Color]::Gray
     $grpSubject.Controls.Add($lblSubjectTemplate)
     
@@ -798,7 +663,7 @@ function New-ConfigurationGUI {
     $btnGenerateSubject = New-Object System.Windows.Forms.Button
     $btnGenerateSubject.Location = New-Object System.Drawing.Point(15, 85)
     $btnGenerateSubject.Size = New-Object System.Drawing.Size(180, 25)
-    $btnGenerateSubject.Text = "🔄 Auto-Generate Subject"
+    $btnGenerateSubject.Text = "Auto-Generate Subject"
     $btnGenerateSubject.BackColor = [System.Drawing.Color]::LightGreen
     $grpSubject.Controls.Add($btnGenerateSubject)
     
@@ -834,7 +699,7 @@ function New-ConfigurationGUI {
     $btnSave = New-Object System.Windows.Forms.Button
     $btnSave.Location = New-Object System.Drawing.Point(750, 700)
     $btnSave.Size = New-Object System.Drawing.Size(150, 35)
-    $btnSave.Text = "💾 Save Configuration"
+    $btnSave.Text = "Save Configuration"
     $btnSave.BackColor = [System.Drawing.Color]::LightGreen
     $btnSave.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
     $form.Controls.Add($btnSave)
@@ -842,7 +707,7 @@ function New-ConfigurationGUI {
     $btnSaveTemplate = New-Object System.Windows.Forms.Button
     $btnSaveTemplate.Location = New-Object System.Drawing.Point(910, 700)
     $btnSaveTemplate.Size = New-Object System.Drawing.Size(160, 35)
-    $btnSaveTemplate.Text = "📋 Save as Template"
+    $btnSaveTemplate.Text = "Save as Template"
     $btnSaveTemplate.BackColor = [System.Drawing.Color]::LightBlue
     $btnSaveTemplate.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
     $form.Controls.Add($btnSaveTemplate)
@@ -886,6 +751,139 @@ function New-ConfigurationGUI {
         }
         
         if ($Config.email_subject) { $txtSubject.Text = $Config.email_subject }
+    }
+    
+    function Import-ParsedDataToForm {
+        <#
+        .SYNOPSIS
+            Maps parsed PDF data to form fields - now handles structured address objects
+        #>
+        param([object]$ParsedData)
+        
+        if (-not $ParsedData) { return }
+        
+        # Map vendor
+        if ($ParsedData.Vendor) { 
+            $cmbAuction.Text = $ParsedData.Vendor 
+        }
+        
+        # Map phone (use first one)
+        if ($ParsedData.ContactInfo.Phone -and $ParsedData.ContactInfo.Phone.Count -gt 0) {
+            $txtPhone.Text = $ParsedData.ContactInfo.Phone[0]
+        }
+        
+        # Map email (use first one)
+        if ($ParsedData.ContactInfo.Email -and $ParsedData.ContactInfo.Email.Count -gt 0) {
+            $txtEmail.Text = $ParsedData.ContactInfo.Email[0]
+        }
+        
+        # Map pickup addresses (structured objects with Street, Address2, City, State, Zip)
+        if ($ParsedData.PickupAddresses -and $ParsedData.PickupAddresses.Count -gt 0) {
+            # Format each address object into multiline text
+            $formattedAddresses = @()
+            foreach ($addr in $ParsedData.PickupAddresses) {
+                if ($addr.Address2) {
+                    $formattedAddresses += "$($addr.Street)`r`n$($addr.Address2)`r`n$($addr.City), $($addr.State) $($addr.Zip)"
+                } else {
+                    $formattedAddresses += "$($addr.Street)`r`n$($addr.City), $($addr.State) $($addr.Zip)"
+                }
+            }
+            
+            # If multiple addresses, show selection dialog
+            if ($ParsedData.PickupAddresses.Count -gt 1) {
+                $selection = Show-AddressSelectionDialog -Addresses $ParsedData.PickupAddresses
+                if ($selection) {
+                    $txtPickup.Text = $selection
+                } else {
+                    # User cancelled, use first address
+                    $txtPickup.Text = $formattedAddresses[0]
+                }
+            } else {
+                # Single address, just use it
+                $txtPickup.Text = $formattedAddresses[0]
+            }
+        }
+        
+        # Map pickup dates (use first one or join if multiple)
+        if ($ParsedData.PickupDates -and $ParsedData.PickupDates.Count -gt 0) {
+            $txtPickupDate.Text = $ParsedData.PickupDates[0]
+        }
+        
+        # Map special notes
+        $lstSpecialNotes.Items.Clear()
+        if ($ParsedData.SpecialNotes -and $ParsedData.SpecialNotes.Count -gt 0) {
+            foreach ($note in $ParsedData.SpecialNotes) {
+                $lstSpecialNotes.Items.Add($note) | Out-Null
+            }
+        }
+    }
+    
+    function Show-AddressSelectionDialog {
+        <#
+        .SYNOPSIS
+            Shows a dialog to select from multiple pickup addresses
+        #>
+        param([object[]]$Addresses)
+        
+        $selectionForm = New-Object System.Windows.Forms.Form
+        $selectionForm.Text = "Select Pickup Address"
+        $selectionForm.Size = New-Object System.Drawing.Size(600, 400)
+        $selectionForm.StartPosition = "CenterParent"
+        $selectionForm.FormBorderStyle = "FixedDialog"
+        $selectionForm.MaximizeBox = $false
+        $selectionForm.MinimizeBox = $false
+        
+        $lblInstruction = New-Object System.Windows.Forms.Label
+        $lblInstruction.Location = New-Object System.Drawing.Point(20, 20)
+        $lblInstruction.Size = New-Object System.Drawing.Size(560, 40)
+        $lblInstruction.Text = "Multiple pickup addresses were found in the invoice.`nPlease select the primary pickup address:"
+        $selectionForm.Controls.Add($lblInstruction)
+        
+        $lstAddresses = New-Object System.Windows.Forms.ListBox
+        $lstAddresses.Location = New-Object System.Drawing.Point(20, 70)
+        $lstAddresses.Size = New-Object System.Drawing.Size(560, 240)
+        $lstAddresses.Font = New-Object System.Drawing.Font("Consolas", 9)
+        
+        foreach ($addr in $Addresses) {
+            if ($addr.Address2) {
+                $display = "$($addr.Street) | $($addr.Address2) | $($addr.City), $($addr.State) $($addr.Zip)"
+            } else {
+                $display = "$($addr.Street) | $($addr.City), $($addr.State) $($addr.Zip)"
+            }
+            $lstAddresses.Items.Add($display) | Out-Null
+        }
+        $lstAddresses.SelectedIndex = 0
+        $selectionForm.Controls.Add($lstAddresses)
+        
+        $btnOK = New-Object System.Windows.Forms.Button
+        $btnOK.Location = New-Object System.Drawing.Point(400, 320)
+        $btnOK.Size = New-Object System.Drawing.Size(80, 30)
+        $btnOK.Text = "OK"
+        $btnOK.DialogResult = [System.Windows.Forms.DialogResult]::OK
+        $selectionForm.Controls.Add($btnOK)
+        
+        $btnCancel = New-Object System.Windows.Forms.Button
+        $btnCancel.Location = New-Object System.Drawing.Point(490, 320)
+        $btnCancel.Size = New-Object System.Drawing.Size(80, 30)
+        $btnCancel.Text = "Cancel"
+        $btnCancel.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+        $selectionForm.Controls.Add($btnCancel)
+        
+        $selectionForm.AcceptButton = $btnOK
+        $selectionForm.CancelButton = $btnCancel
+        
+        $result = $selectionForm.ShowDialog()
+        
+        if ($result -eq [System.Windows.Forms.DialogResult]::OK -and $lstAddresses.SelectedIndex -ge 0) {
+            $selectedAddr = $Addresses[$lstAddresses.SelectedIndex]
+            if ($selectedAddr.Address2) {
+                return "$($selectedAddr.Street)`r`n$($selectedAddr.Address2)`r`n$($selectedAddr.City), $($selectedAddr.State) $($selectedAddr.Zip)"
+            } else {
+                return "$($selectedAddr.Street)`r`n$($selectedAddr.City), $($selectedAddr.State) $($selectedAddr.Zip)"
+            }
+        }
+        
+        return $null
     }
     
     function Build-ConfigObject {
@@ -991,59 +989,72 @@ function New-ConfigurationGUI {
         }
     })
     
-    # Import PDF Button
+    # Import PDF Button - NOW USES Generic-PDF-Invoice-Parser.ps1
     $btnImportPDF.Add_Click({
         $openFileDialog = New-Object System.Windows.Forms.OpenFileDialog
         $openFileDialog.Filter = "PDF files (*.pdf)|*.pdf|All files (*.*)|*.*"
         $openFileDialog.Title = "Select Auction Invoice PDF"
         
         if ($openFileDialog.ShowDialog() -eq "OK") {
-            Write-Host "`n📄 Processing PDF: $($openFileDialog.FileName)" -ForegroundColor Cyan
+            Write-Host "`n╔════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+            Write-Host "║   IMPORTING PDF INVOICE DATA                          ║" -ForegroundColor Cyan
+            Write-Host "╚════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
             
-            $pdfText = Get-PDFText -PDFPath $openFileDialog.FileName
+            # Call the Generic-PDF-Invoice-Parser.ps1 script
+            $parsedData = Invoke-PDFInvoiceParser -PDFPath $openFileDialog.FileName
             
-            if ($pdfText) {
-                $parsed = Get-InvoiceData -InvoiceText $pdfText
+            if ($parsedData) {
+                # Map the parsed data to the form
+                Import-ParsedDataToForm -ParsedData $parsedData
                 
-                Write-Host "`nExtracted Data:" -ForegroundColor Yellow
-                Write-Host "  Company: $($parsed.AuctionCompany)" -ForegroundColor White
-                Write-Host "  Phone: $($parsed.ContactPhone)" -ForegroundColor White
-                Write-Host "  Email: $($parsed.ContactEmail)" -ForegroundColor White
-                Write-Host "  Addresses: $($parsed.PickupAddress.Count)" -ForegroundColor White
-                Write-Host "  Dates: $($parsed.PickupDates.Count)" -ForegroundColor White
-                Write-Host "  Notes: $($parsed.SpecialNotes.Count)" -ForegroundColor White
-                
-                # Populate form
-                if ($parsed.AuctionCompany) { $cmbAuction.Text = $parsed.AuctionCompany }
-                if ($parsed.ContactPhone) { $txtPhone.Text = $parsed.ContactPhone }
-                if ($parsed.ContactEmail) { $txtEmail.Text = $parsed.ContactEmail }
-                
-                if ($parsed.PickupAddress -is [array] -and $parsed.PickupAddress.Count -gt 0) {
-                    $txtPickup.Text = $parsed.PickupAddress -join "`r`n"
+                # Build summary message
+                $summary = "PDF data imported successfully using Generic-PDF-Invoice-Parser.ps1!`n`n"
+                $summary += "Extracted Information:`n"
+                $summary += "─────────────────────`n"
+                if ($parsedData.Vendor) { $summary += "• Vendor: $($parsedData.Vendor)`n" }
+                if ($parsedData.InvoiceNumber) { $summary += "• Invoice: $($parsedData.InvoiceNumber)`n" }
+                if ($parsedData.ContactInfo.Phone.Count -gt 0) { 
+                    $summary += "• Phones: $($parsedData.ContactInfo.Phone.Count)`n"
+                    foreach ($phone in $parsedData.ContactInfo.Phone) {
+                        $summary += "  - $phone`n"
+                    }
                 }
-                elseif ($parsed.PickupAddress) {
-                    $txtPickup.Text = $parsed.PickupAddress
+                if ($parsedData.ContactInfo.Email.Count -gt 0) { 
+                    $summary += "• Emails: $($parsedData.ContactInfo.Email.Count)`n"
+                    foreach ($email in $parsedData.ContactInfo.Email) {
+                        $summary += "  - $email`n"
+                    }
                 }
-                
-                if ($parsed.PickupDates -and $parsed.PickupDates.Count -gt 0) {
-                    $txtPickupDate.Text = $parsed.PickupDates[0]
+                if ($parsedData.PickupAddresses.Count -gt 0) { 
+                    $summary += "• Pickup Addresses: $($parsedData.PickupAddresses.Count)`n"
+                    foreach ($addr in $parsedData.PickupAddresses) {
+                        if ($addr.Address2) {
+                            $summary += "  - $($addr.Street) ($($addr.Address2)), $($addr.City) $($addr.State)`n"
+                        } else {
+                            $summary += "  - $($addr.Street), $($addr.City) $($addr.State)`n"
+                        }
+                    }
                 }
-                
-                $lstSpecialNotes.Items.Clear()
-                foreach ($note in $parsed.SpecialNotes) {
-                    $lstSpecialNotes.Items.Add($note) | Out-Null
+                if ($parsedData.PickupDates.Count -gt 0) { 
+                    $summary += "• Pickup Dates: $($parsedData.PickupDates.Count)`n"
+                    foreach ($date in $parsedData.PickupDates) {
+                        $summary += "  - $date`n"
+                    }
                 }
+                if ($parsedData.Items.Count -gt 0) { $summary += "• Items: $($parsedData.Items.Count)`n" }
+                if ($parsedData.SpecialNotes.Count -gt 0) { $summary += "• Special Notes: $($parsedData.SpecialNotes.Count)`n" }
+                $summary += "`nPlease review and adjust as needed."
                 
                 [System.Windows.Forms.MessageBox]::Show(
-                    "PDF data imported successfully!`n`nPlease review and adjust as needed.`n`nExtracted:`n- Company: $($parsed.AuctionCompany)`n- Phone: $($parsed.ContactPhone)`n- Email: $($parsed.ContactEmail)`n- Addresses: $($parsed.PickupAddress.Count)`n- Special Notes: $($parsed.SpecialNotes.Count)",
-                    "Import Complete",
+                    $summary,
+                    "Import Successful",
                     [System.Windows.Forms.MessageBoxButtons]::OK,
                     [System.Windows.Forms.MessageBoxIcon]::Information
                 )
             }
             else {
                 [System.Windows.Forms.MessageBox]::Show(
-                    "Could not extract text from PDF.`n`nPlease enter information manually.`n`nTip: Try saving the invoice as a text-based PDF if possible.",
+                    "Could not parse PDF invoice.`n`nPossible issues:`n• Generic-PDF-Invoice-Parser.ps1 not found in script directory`n• PDF extraction failed`n• pdftotext not installed`n`nPlease check console output for details.",
                     "Import Failed",
                     [System.Windows.Forms.MessageBoxButtons]::OK,
                     [System.Windows.Forms.MessageBoxIcon]::Warning
@@ -1087,38 +1098,73 @@ function New-ConfigurationGUI {
     # Generate Subject Line Button
     $btnGenerateSubject.Add_Click({
         try {
-            # Parse pickup address for city/state
             $pickupText = $txtPickup.Text
             $pickupCity = "Unknown"
             $pickupState = "XX"
+            $pickupZip = "00000"
             
-            # Try multiple patterns for city/state extraction
-            if ($pickupText -match ',\s*([A-Za-z\s]+),\s*([A-Z]{2})\s+\d{5}') {
+            # Handle multiline address format (split and look at last line for city/state/zip)
+            $pickupLines = $pickupText -split "`r`n|`r|`n"
+            $cityStateLine = $pickupLines | Where-Object { $_ -match '([A-Za-z\s]+),?\s+([A-Z]{2})\s+(\d{5})' } | Select-Object -Last 1
+            
+            if ($cityStateLine) {
+                # Extract city, state, and ZIP from the line
+                if ($cityStateLine -match '([A-Za-z][A-Za-z\s.''()-]+),?\s+([A-Z]{2})\s+(\d{5})') {
+                    $pickupCity = $Matches[1].Trim() -replace '\s+', ' '
+                    $pickupState = $Matches[2].Trim()
+                    $pickupZip = $Matches[3].Trim()
+                }
+            }
+            # Fallback: try single-line formats
+            elseif ($pickupText -match ',\s*([A-Za-z\s]+),\s*([A-Z]{2})\s+(\d{5})') {
                 $pickupCity = $Matches[1].Trim()
                 $pickupState = $Matches[2].Trim()
+                $pickupZip = $Matches[3].Trim()
             }
-            elseif ($pickupText -match '\(([A-Za-z\s]+)\).*?([A-Z]{2})') {
+            elseif ($pickupText -match '\(([A-Za-z\s]+)\).*?([A-Z]{2})\s+(\d{5})') {
                 $pickupCity = $Matches[1].Trim()
                 $pickupState = $Matches[2].Trim()
+                $pickupZip = $Matches[3].Trim()
             }
             
-            # Parse delivery address for city/state
             $deliveryText = $cmbDelivery.Text
             $deliveryCity = "Unknown"
             $deliveryState = "XX"
+            $deliveryZip = "00000"
             
-            if ($deliveryText -match ',\s*([A-Za-z\s]+),\s*([A-Z]{2})') {
+            # Handle delivery address (usually single-line)
+            if ($deliveryText -match ',\s*([A-Za-z\s]+),\s*([A-Z]{2})\s+(\d{5})') {
                 $deliveryCity = $Matches[1].Trim()
                 $deliveryState = $Matches[2].Trim()
+                $deliveryZip = $Matches[3].Trim()
             }
             
-            # Parse pickup date
             $pickupDateText = $txtPickupDate.Text
             $pickupDate = "TBD"
             
+            # Extract date from pickup datetime - handle multiple formats
+            # Format 1: Full date with year (MM/DD/YYYY)
             if ($pickupDateText -match '(\d{1,2}/\d{1,2}/\d{4})') {
                 $pickupDate = $Matches[1]
             }
+            # Format 2: Date range with "thru" or "through" - extract first date
+            elseif ($pickupDateText -match '(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s+(\d{1,2}/\d{1,2})(?:/(\d{2,4}))?\s+(?:thru|through|to|-)\s+') {
+                $month = $Matches[1].Split('/')[0]
+                $day = $Matches[1].Split('/')[1]
+                $year = if ($Matches[2]) { $Matches[2] } else { (Get-Date).Year }
+                # Handle 2-digit year
+                if ($year.Length -eq 2) { $year = "20$year" }
+                $pickupDate = "$month/$day/$year"
+            }
+            # Format 3: Simple date range without day names (10/7 thru 10/10)
+            elseif ($pickupDateText -match '(\d{1,2}/\d{1,2})(?:/(\d{2,4}))?\s+(?:thru|through|to|-)\s+') {
+                $month = $Matches[1].Split('/')[0]
+                $day = $Matches[1].Split('/')[1]
+                $year = if ($Matches[2]) { $Matches[2] } else { (Get-Date).Year }
+                if ($year.Length -eq 2) { $year = "20$year" }
+                $pickupDate = "$month/$day/$year"
+            }
+            # Format 4: Month name with year (October 10th, 2025)
             elseif ($pickupDateText -match '([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4})') {
                 try {
                     $dateStr = $Matches[1] -replace '(?:st|nd|rd|th)', ''
@@ -1129,13 +1175,20 @@ function New-ConfigurationGUI {
                     $pickupDate = $Matches[1]
                 }
             }
+            # Format 5: Single date without year (10/7)
+            elseif ($pickupDateText -match '(\d{1,2}/\d{1,2})(?!\d)') {
+                $month = $Matches[1].Split('/')[0]
+                $day = $Matches[1].Split('/')[1]
+                $year = (Get-Date).Year
+                $pickupDate = "$month/$day/$year"
+            }
             
-            # Generate subject line
-            $subject = "Freight Quote Request - $pickupCity, $pickupState to $deliveryCity, $deliveryState - Pickup $pickupDate"
+            # Build subject with ZIP codes for professional freight industry standard
+            $subject = "Freight Quote Request - $pickupCity, $pickupState $pickupZip to $deliveryCity, $deliveryState $deliveryZip - Pickup $pickupDate"
             $txtSubject.Text = $subject
             
             [System.Windows.Forms.MessageBox]::Show(
-                "Subject line generated!`n`nSubject:`n$subject`n`nPlease review and edit if needed.",
+                "Subject line generated!`n`nSubject:`n$subject`n`n✓ Includes ZIP codes for accurate freight routing`n✓ Ready for professional logistics quotes`n`nPlease review and edit if needed.",
                 "Subject Generated",
                 [System.Windows.Forms.MessageBoxButtons]::OK,
                 [System.Windows.Forms.MessageBoxIcon]::Information
@@ -1211,13 +1264,9 @@ function New-ConfigurationGUI {
 #endregion
 
 #region Main Execution
-# Load Visual Basic for InputBox
-Add-Type -AssemblyName Microsoft.VisualBasic
-
-# Launch GUI
 Write-Host "`n╔════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "║   LOGISTICS EMAIL CONFIGURATION TOOL v2.0.1           ║" -ForegroundColor Cyan
-Write-Host "║   with PDF Parsing & Template Manager                ║" -ForegroundColor Cyan
+Write-Host "║   LOGISTICS EMAIL CONFIGURATION TOOL v2.3.2           ║" -ForegroundColor Cyan
+Write-Host "║   with Generic-PDF-Invoice-Parser Integration        ║" -ForegroundColor Cyan
 Write-Host "╚════════════════════════════════════════════════════════╝`n" -ForegroundColor Cyan
 
 # Auto-load PDF if provided
