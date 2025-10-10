@@ -1,27 +1,94 @@
 <#
 .SYNOPSIS
-    Logistics Automation Suite - Enhanced Master Launcher v2.0
+    Logistics Automation Suite - Enhanced Master Launcher v2.2.1
     
 .DESCRIPTION
     Updated central hub with new analytics dashboard, enhanced carrier tracking,
-    and universal PDF invoice parser integration.
+    universal PDF invoice parser integration, and streamlined email generation.
     
 .EXAMPLE
-    .\Update-Logistics-Suite.ps1
+    .\Logistics-Automation-Suite.ps1
     
 .NOTES
     Author: John O'Neill Sr.
     Company: Azure Innovators
-    Create Date: 2025-01-08
-    Version: 2.0.0
-    Change Date: 2025-01-08
-    Change Purpose: Added Analytics Dashboard & PDF Parser Integration
+    Create Date: 01/08/2025
+    Version: 2.4.0
+    Change Date: 10/10/2025
+    Change Purpose: Integrated Foxit PDF helper for automatic PDF conversion
+
+.CHANGELOG
+    2.4.0 - 10/10/2025 - Integrated Convert-HTMLtoPDF.ps1 helper script
+                       - Automatic PDF conversion using Foxit, Edge, or Chrome
+                       - Fast, reliable PDF creation (3-5 seconds vs overnight hangs)
+                       - No more Word COM automation issues
+    2.3.0 - 10/10/2025 - Removed Word PDF conversion from default workflow
+                       - Prevents script from hanging overnight on Word COM issues
+                       - Users get clear instructions to print HTML to PDF manually
+    2.2.1 - 10/09/2025 - Fixed maxImages variable initialization with InputBox prompt
+                       - Added validation for 1-10 range with default of 3
+                       - Ensures parameter always has a value when passed to script
+    2.2.0 - 10/09/2025 - Added MaxImagesPerLot parameter to GUI workflow
+                       - Users can now choose 1-10 images per lot (default 3)
+                       - Added Microsoft.VisualBasic assembly for InputBox
+    2.1.1 - 10/09/2025 - Fixed apostrophe/single quote handling in file paths
+    2.1.0 - 10/09/2025 - Removed confusing mode selection prompt
+    2.0.3 - 10/09/2025 - Config file selection now available in Standard mode
+    2.0.2 - 10/09/2025 - Fixed execution policy issue with script execution
+    2.0.1 - 10/09/2025 - Fixed Generate Email button error handling
+    2.0.0 - 01/08/2025 - Added Analytics Dashboard & PDF Parser Integration
 #>
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName Microsoft.VisualBasic
 
 $script:ScriptDirectory = $PSScriptRoot
+
+#region Helper Functions
+function Invoke-ScriptWithBypass {
+    <#
+    .SYNOPSIS
+        Executes a PowerShell script with execution policy bypass
+    .NOTES
+        Author: John O'Neill Sr.
+        Company: Azure Innovators
+        Create Date: 10/09/2025
+        Version: 1.0.0
+        Change Date: 
+        Change Purpose: Helper to bypass execution policy while capturing output
+    #>
+    param(
+        [string]$ScriptPath,
+        [hashtable]$Parameters
+    )
+    
+    # Build parameter string
+    $paramString = ""
+    foreach ($key in $Parameters.Keys) {
+        $value = $Parameters[$key]
+        if ($value -is [bool]) {
+            if ($value) {
+                $paramString += " -$key"
+            }
+        }
+        else {
+            $paramString += " -$key `"$value`""
+        }
+    }
+    
+    # Execute with bypass
+    $command = "& '$ScriptPath' $paramString"
+    
+    try {
+        $result = powershell.exe -ExecutionPolicy Bypass -Command $command
+        return $result
+    }
+    catch {
+        throw
+    }
+}
+#endregion
 
 #region Main Menu GUI
 function Show-EnhancedMainMenu {
@@ -31,14 +98,14 @@ function Show-EnhancedMainMenu {
     .NOTES
         Author: John O'Neill Sr.
         Company: Azure Innovators
-        Create Date: 2025-01-08
-        Version: 2.0.0
-        Change Date: 2025-01-08
-        Change Purpose: Added new tool buttons
+        Create Date: 01/08/2025
+        Version: 2.4.0
+        Change Date: 10/10/2025
+        Change Purpose: Updated for Foxit PDF helper integration
     #>
     
     $form = New-Object System.Windows.Forms.Form
-    $form.Text = "Logistics Automation Suite v2.0 - JT Custom Trailers"
+    $form.Text = "Logistics Automation Suite v2.4.0 - JT Custom Trailers"
     $form.Size = New-Object System.Drawing.Size(950, 750)
     $form.StartPosition = "CenterScreen"
     $form.FormBorderStyle = "FixedDialog"
@@ -54,7 +121,7 @@ function Show-EnhancedMainMenu {
     $lblTitle = New-Object System.Windows.Forms.Label
     $lblTitle.Location = New-Object System.Drawing.Point(20, 15)
     $lblTitle.Size = New-Object System.Drawing.Size(900, 35)
-    $lblTitle.Text = "Logistics Automation Suite v2.0"
+    $lblTitle.Text = "Logistics Automation Suite v2.4.0"
     $lblTitle.Font = New-Object System.Drawing.Font("Segoe UI", 20, [System.Drawing.FontStyle]::Bold)
     $lblTitle.ForeColor = [System.Drawing.Color]::White
     $pnlHeader.Controls.Add($lblTitle)
@@ -70,9 +137,9 @@ function Show-EnhancedMainMenu {
     $lblVersion = New-Object System.Windows.Forms.Label
     $lblVersion.Location = New-Object System.Drawing.Point(20, 75)
     $lblVersion.Size = New-Object System.Drawing.Size(900, 18)
-    $lblVersion.Text = "Analytics Dashboard • Enhanced PDF Parser • Carrier Performance Metrics"
+    $lblVersion.Text = "NEW: Automatic PDF conversion • Foxit/Edge/Chrome support • 3-5 second PDF creation • No more hangs!"
     $lblVersion.Font = New-Object System.Drawing.Font("Segoe UI", 8, [System.Drawing.FontStyle]::Italic)
-    $lblVersion.ForeColor = [System.Drawing.Color]::FromArgb(52, 152, 219)
+    $lblVersion.ForeColor = [System.Drawing.Color]::FromArgb(46, 204, 113)
     $pnlHeader.Controls.Add($lblVersion)
     
     $form.Controls.Add($pnlHeader)
@@ -253,7 +320,7 @@ function Show-EnhancedMainMenu {
 1. Use "PDF Invoice Parser" to extract data from auction invoices
 2. Or use "Configuration Tool" to manually set up auction details
 3. Manage freight companies in "Recipient Manager"
-4. Click "Generate Email" to create quote requests
+4. Click "Generate Email" to create quote requests (PDFs created automatically in 3-5 seconds!)
 5. Track responses and analyze costs in "Quote Tracker" and "Analytics Dashboard"
 "@
     $lblHelp.Font = New-Object System.Drawing.Font("Segoe UI", 9)
@@ -273,6 +340,17 @@ function Show-EnhancedMainMenu {
     #region Event Handlers
     
     $btnConfig.Add_Click({
+        <#
+        .SYNOPSIS
+            Opens Configuration Tool
+        .NOTES
+            Author: John O'Neill Sr.
+            Company: Azure Innovators
+            Create Date: 01/08/2025
+            Version: 1.0.0
+            Change Date: 
+            Change Purpose:
+        #>
         $configScript = Join-Path $script:ScriptDirectory "Logistics-Config-GUI.ps1"
         if (Test-Path $configScript) {
             Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$configScript`""
@@ -288,6 +366,17 @@ function Show-EnhancedMainMenu {
     })
     
     $btnPDFParser.Add_Click({
+        <#
+        .SYNOPSIS
+            Opens PDF Invoice Parser
+        .NOTES
+            Author: John O'Neill Sr.
+            Company: Azure Innovators
+            Create Date: 01/08/2025
+            Version: 1.0.0
+            Change Date: 
+            Change Purpose:
+        #>
         $parserScript = Join-Path $script:ScriptDirectory "Generic-PDF-Invoice-Parser.ps1"
         if (Test-Path $parserScript) {
             Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$parserScript`" -GUI"
@@ -303,6 +392,17 @@ function Show-EnhancedMainMenu {
     })
     
     $btnRecipients.Add_Click({
+        <#
+        .SYNOPSIS
+            Opens Recipient Manager
+        .NOTES
+            Author: John O'Neill Sr.
+            Company: Azure Innovators
+            Create Date: 01/08/2025
+            Version: 1.0.0
+            Change Date: 
+            Change Purpose:
+        #>
         $recipientScript = Join-Path $script:ScriptDirectory "Freight-Recipient-Manager.ps1"
         if (Test-Path $recipientScript) {
             Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$recipientScript`""
@@ -318,32 +418,262 @@ function Show-EnhancedMainMenu {
     })
     
     $btnGenerate.Add_Click({
-        # Prompt for CSV and config files
-        $openCSV = New-Object System.Windows.Forms.OpenFileDialog
-        $openCSV.Filter = "CSV files (*.csv)|*.csv"
-        $openCSV.Title = "Select Auction Lots CSV File"
+        <#
+        .SYNOPSIS
+            Generate Email button - Prompts for max images per lot
+        .NOTES
+            Author: John O'Neill Sr.
+            Company: Azure Innovators
+            Create Date: 01/08/2025
+            Version: 2.2.1
+            Change Date: 10/09/2025
+            Change Purpose: Added maxImages prompt with validation
+        #>
         
-        if ($openCSV.ShowDialog() -eq "OK") {
-            $openConfig = New-Object System.Windows.Forms.OpenFileDialog
-            $openConfig.Filter = "JSON files (*.json)|*.json"
-            $openConfig.Title = "Select Configuration File"
-            $openConfig.InitialDirectory = Join-Path $script:ScriptDirectory "Templates"
+        try {
+            Write-Host "`n╔════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+            Write-Host "║    Starting Email Generation Process                  ║" -ForegroundColor Cyan
+            Write-Host "╚════════════════════════════════════════════════════════╝`n" -ForegroundColor Cyan
             
-            if ($openConfig.ShowDialog() -eq "OK") {
-                $imageDir = New-Object System.Windows.Forms.FolderBrowserDialog
-                $imageDir.Description = "Select Image Directory"
-                
-                if ($imageDir.ShowDialog() -eq "OK") {
-                    $genScript = Join-Path $script:ScriptDirectory "Generate-LogisticsEmail.ps1"
-                    $arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$genScript`" -CSVPath `"$($openCSV.FileName)`" -ImageDirectory `"$($imageDir.SelectedPath)`" -CreateOutlookDraft"
-                    
-                    Start-Process powershell.exe -ArgumentList $arguments
+            # Step 1: Select CSV file
+            Write-Host "Step 1: Selecting CSV file..." -ForegroundColor Yellow
+            $openCSV = New-Object System.Windows.Forms.OpenFileDialog
+            $openCSV.Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*"
+            $openCSV.Title = "Select Auction Lots CSV File"
+            $openCSV.InitialDirectory = [Environment]::GetFolderPath('Desktop')
+            
+            if ($openCSV.ShowDialog() -ne "OK") {
+                Write-Host "CSV selection cancelled" -ForegroundColor Yellow
+                return
+            }
+            
+            $csvPath = $openCSV.FileName
+            Write-Host "   ✓ CSV selected: $(Split-Path $csvPath -Leaf)" -ForegroundColor Green
+            
+            # Step 2: Select Image Directory
+            Write-Host "Step 2: Selecting image directory..." -ForegroundColor Yellow
+            $imageDir = New-Object System.Windows.Forms.FolderBrowserDialog
+            $imageDir.Description = "Select Directory Containing Lot Images"
+            $imageDir.RootFolder = [System.Environment+SpecialFolder]::Desktop
+            
+            if ($imageDir.ShowDialog() -ne "OK") {
+                Write-Host "Image directory selection cancelled" -ForegroundColor Yellow
+                return
+            }
+            
+            $imagePath = $imageDir.SelectedPath
+            Write-Host "   ✓ Images directory: $(Split-Path $imagePath -Leaf)" -ForegroundColor Green
+            
+            # Step 3: Ask for maximum images per lot
+            Write-Host "Step 3: Maximum images per lot..." -ForegroundColor Yellow
+            
+            $maxImages = 3  # Default value
+            
+            $imageCountInput = [Microsoft.VisualBasic.Interaction]::InputBox(
+                "How many images per lot would you like to include?`n`n" +
+                "Enter a number between 1 and 10.`n" +
+                "Default is 3 images per lot.`n`n" +
+                "More images = larger PDF files but better detail.",
+                "Maximum Images Per Lot",
+                "3"
+            )
+            
+            if ($imageCountInput -ne "") {
+                # Validate and parse the input
+                $parsedValue = 0
+                if ([int]::TryParse($imageCountInput, [ref]$parsedValue)) {
+                    if ($parsedValue -ge 1 -and $parsedValue -le 10) {
+                        $maxImages = $parsedValue
+                        Write-Host "   ✓ Using $maxImages images per lot" -ForegroundColor Green
+                    }
+                    else {
+                        Write-Host "   ⚠ Invalid range ($parsedValue). Using default (3)" -ForegroundColor Yellow
+                        $maxImages = 3
+                    }
+                }
+                else {
+                    Write-Host "   ⚠ Invalid input. Using default (3)" -ForegroundColor Yellow
+                    $maxImages = 3
                 }
             }
+            else {
+                Write-Host "   ✓ Using default (3 images per lot)" -ForegroundColor Green
+                $maxImages = 3
+            }
+            
+            # Step 4: Ask if user wants to use a config file
+            $configPath = $null
+            $templatePath = $null
+            
+            Write-Host "Step 4: Configuration file..." -ForegroundColor Yellow
+            $useConfig = [System.Windows.Forms.MessageBox]::Show(
+                "Do you have a configuration JSON file with auction details?`n`n" +
+                "Config files contain pickup address, delivery info, special notes, etc.`n`n" +
+                "YES = Select config file (recommended)`n" +
+                "NO = Use basic format without config",
+                "Use Configuration File?",
+                [System.Windows.Forms.MessageBoxButtons]::YesNo,
+                [System.Windows.Forms.MessageBoxIcon]::Question
+            )
+            
+            if ($useConfig -eq 'Yes') {
+                $openConfig = New-Object System.Windows.Forms.OpenFileDialog
+                $openConfig.Filter = "JSON Configuration (*.json)|*.json|All files (*.*)|*.*"
+                $openConfig.Title = "Select Configuration JSON File"
+                $openConfig.InitialDirectory = Join-Path $script:ScriptDirectory "Templates"
+                
+                if ($openConfig.ShowDialog() -eq "OK") {
+                    $configPath = $openConfig.FileName
+                    Write-Host "   ✓ Config selected: $(Split-Path $configPath -Leaf)" -ForegroundColor Green
+                }
+                else {
+                    Write-Host "   ℹ No config selected" -ForegroundColor Yellow
+                }
+            }
+            else {
+                Write-Host "   ℹ Skipping config file" -ForegroundColor Yellow
+            }
+            
+            # Step 5: Verify Generate-LogisticsEmail.ps1 exists
+            $genScript = Join-Path $script:ScriptDirectory "Generate-LogisticsEmail.ps1"
+            
+            if (!(Test-Path $genScript)) {
+                $errorMsg = "Generate-LogisticsEmail.ps1 not found at:`n$genScript"
+                Write-Host "   ✗ ERROR: $errorMsg" -ForegroundColor Red
+                [System.Windows.Forms.MessageBox]::Show(
+                    $errorMsg,
+                    "Script Not Found",
+                    [System.Windows.Forms.MessageBoxButtons]::OK,
+                    [System.Windows.Forms.MessageBoxIcon]::Error
+                )
+                return
+            }
+            
+            Write-Host "`n╔════════════════════════════════════════════════════════╗" -ForegroundColor Green
+            Write-Host "║    Executing Email Generation Script                  ║" -ForegroundColor Green
+            Write-Host "╚════════════════════════════════════════════════════════╝`n" -ForegroundColor Green
+            
+            # Step 6: Build command string for execution
+            # IMPORTANT: Escape single quotes in paths for PowerShell
+            $escapedGenScript = $genScript -replace "'", "''"
+            $escapedCsvPath = $csvPath -replace "'", "''"
+            $escapedImagePath = $imagePath -replace "'", "''"
+            
+            # Note: Removed -TryWordPDFConversion by default to prevent hanging
+            # HTML report can be manually printed to PDF in seconds
+            $command = "& '$escapedGenScript' -CSVPath '$escapedCsvPath' -ImageDirectory '$escapedImagePath' -MaxImagesPerLot $maxImages -CreateOutlookDraft -ShowDashboard"
+            
+            # Add config path if provided
+            if ($configPath) {
+                $escapedConfigPath = $configPath -replace "'", "''"
+                $command += " -ConfigPath '$escapedConfigPath'"
+                Write-Host "Using Config File:" -ForegroundColor Cyan
+                Write-Host "   Config: $(Split-Path $configPath -Leaf)" -ForegroundColor Gray
+                Write-Host "   Using built-in email format (recommended)" -ForegroundColor Gray
+            }
+            else {
+                Write-Host "Running without config file (basic mode)" -ForegroundColor Yellow
+            }
+            
+            Write-Host "   CSV: $(Split-Path $csvPath -Leaf)" -ForegroundColor Gray
+            Write-Host "   Images: $(Split-Path $imagePath -Leaf)" -ForegroundColor Gray
+            Write-Host "   Max Images Per Lot: $maxImages" -ForegroundColor Gray
+            Write-Host "`nProcessing... Please wait...`n" -ForegroundColor Yellow
+            
+            # Step 7: Execute with execution policy bypass
+            Write-Host "Executing command with bypass..." -ForegroundColor Gray
+            
+            # Use Start-Process with -Wait to see output
+            $psi = New-Object System.Diagnostics.ProcessStartInfo
+            $psi.FileName = "powershell.exe"
+            $psi.Arguments = "-ExecutionPolicy Bypass -Command `"$command`""
+            $psi.UseShellExecute = $false
+            $psi.CreateNoWindow = $false
+            
+            $process = [System.Diagnostics.Process]::Start($psi)
+            $process.WaitForExit()
+            
+            $exitCode = $process.ExitCode
+            
+            if ($exitCode -eq 0) {
+                Write-Host "`n╔════════════════════════════════════════════════════════╗" -ForegroundColor Green
+                Write-Host "║          EMAIL GENERATED SUCCESSFULLY! ✓               ║" -ForegroundColor Green
+                Write-Host "╚════════════════════════════════════════════════════════╝`n" -ForegroundColor Green
+                
+                [System.Windows.Forms.MessageBox]::Show(
+                    "Email generation completed successfully!`n`n" +
+                    "Check the Output directory for generated files.`n" +
+                    "The dashboard should have displayed with statistics.",
+                    "Success",
+                    [System.Windows.Forms.MessageBoxButtons]::OK,
+                    [System.Windows.Forms.MessageBoxIcon]::Information
+                )
+            }
+            else {
+                Write-Host "`n✗ Script exited with code: $exitCode" -ForegroundColor Yellow
+                Write-Host "Check the console output above for details." -ForegroundColor Gray
+                
+                [System.Windows.Forms.MessageBox]::Show(
+                    "Script completed with exit code: $exitCode`n`n" +
+                    "Check the console window for details.`n" +
+                    "Check the Output and Logs directories.",
+                    "Complete",
+                    [System.Windows.Forms.MessageBoxButtons]::OK,
+                    [System.Windows.Forms.MessageBoxIcon]::Warning
+                )
+            }
+        }
+        catch {
+            # Catch any unexpected errors
+            $errorDetails = @"
+╔════════════════════════════════════════════════════════╗
+║               ERROR OCCURRED ✗                         ║
+╚════════════════════════════════════════════════════════╝
+
+ERROR MESSAGE:
+$($_.Exception.Message)
+
+CATEGORY: $($_.CategoryInfo.Category)
+TARGET: $($_.TargetObject)
+
+STACK TRACE:
+$($_.ScriptStackTrace)
+"@
+            
+            Write-Host $errorDetails -ForegroundColor Red
+            
+            # Save error to file
+            $errorLogPath = Join-Path $script:ScriptDirectory ("GUI_Error_" + (Get-Date -Format "yyyyMMdd_HHmmss") + ".log")
+            $errorDetails | Out-File -FilePath $errorLogPath -Encoding UTF8
+            
+            [System.Windows.Forms.MessageBox]::Show(
+                "Error occurred during email generation:`n`n" +
+                "$($_.Exception.Message)`n`n" +
+                "Details saved to: $(Split-Path $errorLogPath -Leaf)",
+                "Error",
+                [System.Windows.Forms.MessageBoxButtons]::OK,
+                [System.Windows.Forms.MessageBoxIcon]::Error
+            )
+        }
+        finally {
+            Write-Host "`n" + ("═" * 60) -ForegroundColor Cyan
+            Write-Host "Operation Complete" -ForegroundColor Cyan
+            Write-Host ("═" * 60) + "`n" -ForegroundColor Cyan
         }
     })
     
     $btnTracker.Add_Click({
+        <#
+        .SYNOPSIS
+            Opens Quote Tracker
+        .NOTES
+            Author: John O'Neill Sr.
+            Company: Azure Innovators
+            Create Date: 01/08/2025
+            Version: 1.0.0
+            Change Date: 
+            Change Purpose:
+        #>
         $trackerScript = Join-Path $script:ScriptDirectory "Auction-Quote-Tracker.ps1"
         if (Test-Path $trackerScript) {
             Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$trackerScript`""
@@ -359,6 +689,17 @@ function Show-EnhancedMainMenu {
     })
     
     $btnAnalytics.Add_Click({
+        <#
+        .SYNOPSIS
+            Opens Analytics Dashboard
+        .NOTES
+            Author: John O'Neill Sr.
+            Company: Azure Innovators
+            Create Date: 01/08/2025
+            Version: 1.0.0
+            Change Date: 
+            Change Purpose:
+        #>
         $analyticsScript = Join-Path $script:ScriptDirectory "Logistics-Analytics-Dashboard.ps1"
         if (Test-Path $analyticsScript) {
             Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$analyticsScript`""
@@ -374,6 +715,17 @@ function Show-EnhancedMainMenu {
     })
     
     $btnQuickBrolyn.Add_Click({
+        <#
+        .SYNOPSIS
+            Quick launch for Brolyn Auction configuration
+        .NOTES
+            Author: John O'Neill Sr.
+            Company: Azure Innovators
+            Create Date: 01/08/2025
+            Version: 1.0.0
+            Change Date: 
+            Change Purpose:
+        #>
         $configScript = Join-Path $script:ScriptDirectory "Logistics-Config-GUI.ps1"
         if (Test-Path $configScript) {
             Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$configScript`" -LoadTemplate `"Brolyn_Auctions`""
@@ -381,6 +733,17 @@ function Show-EnhancedMainMenu {
     })
     
     $btnQuickGeneric.Add_Click({
+        <#
+        .SYNOPSIS
+            Quick launch for Generic Auction configuration
+        .NOTES
+            Author: John O'Neill Sr.
+            Company: Azure Innovators
+            Create Date: 01/08/2025
+            Version: 1.0.0
+            Change Date: 
+            Change Purpose:
+        #>
         $configScript = Join-Path $script:ScriptDirectory "Logistics-Config-GUI.ps1"
         if (Test-Path $configScript) {
             Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$configScript`" -LoadTemplate `"Generic_Template`""
@@ -388,6 +751,17 @@ function Show-EnhancedMainMenu {
     })
     
     $btnParseInvoice.Add_Click({
+        <#
+        .SYNOPSIS
+            Quick PDF Invoice parser with file picker
+        .NOTES
+            Author: John O'Neill Sr.
+            Company: Azure Innovators
+            Create Date: 01/08/2025
+            Version: 1.0.0
+            Change Date: 
+            Change Purpose:
+        #>
         $openPDF = New-Object System.Windows.Forms.OpenFileDialog
         $openPDF.Filter = "PDF files (*.pdf)|*.pdf"
         $openPDF.Title = "Select Invoice PDF to Parse"
@@ -401,6 +775,17 @@ function Show-EnhancedMainMenu {
     })
     
     $btnTemplates.Add_Click({
+        <#
+        .SYNOPSIS
+            Creates starter templates
+        .NOTES
+            Author: John O'Neill Sr.
+            Company: Azure Innovators
+            Create Date: 01/08/2025
+            Version: 1.0.0
+            Change Date: 
+            Change Purpose:
+        #>
         $templateScript = Join-Path $script:ScriptDirectory "Create-StarterTemplates.ps1"
         if (Test-Path $templateScript) {
             Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$templateScript`""
@@ -416,6 +801,17 @@ function Show-EnhancedMainMenu {
     })
     
     $btnExcelConverter.Add_Click({
+        <#
+        .SYNOPSIS
+            Opens Excel to CSV converter
+        .NOTES
+            Author: John O'Neill Sr.
+            Company: Azure Innovators
+            Create Date: 01/08/2025
+            Version: 1.0.0
+            Change Date: 
+            Change Purpose:
+        #>
         $excelScript = Join-Path $script:ScriptDirectory "Export-ExcelToCSV.ps1"
         if (Test-Path $excelScript) {
             Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$excelScript`" -InteractiveMode"
@@ -431,6 +827,17 @@ function Show-EnhancedMainMenu {
     })
     
     $btnViewAnalytics.Add_Click({
+        <#
+        .SYNOPSIS
+            Opens Analytics Dashboard (same as main button)
+        .NOTES
+            Author: John O'Neill Sr.
+            Company: Azure Innovators
+            Create Date: 01/08/2025
+            Version: 1.0.0
+            Change Date: 
+            Change Purpose:
+        #>
         $analyticsScript = Join-Path $script:ScriptDirectory "Logistics-Analytics-Dashboard.ps1"
         if (Test-Path $analyticsScript) {
             Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$analyticsScript`""
@@ -438,6 +845,17 @@ function Show-EnhancedMainMenu {
     })
     
     $btnDataBackup.Add_Click({
+        <#
+        .SYNOPSIS
+            Backs up all data files to timestamped folder
+        .NOTES
+            Author: John O'Neill Sr.
+            Company: Azure Innovators
+            Create Date: 01/08/2025
+            Version: 1.0.0
+            Change Date: 
+            Change Purpose:
+        #>
         $backupDir = ".\Backups\Backup_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
         
         if (!(Test-Path ".\Backups")) {
@@ -475,6 +893,17 @@ function Show-EnhancedMainMenu {
     })
     
     $btnExit.Add_Click({
+        <#
+        .SYNOPSIS
+            Exits the application
+        .NOTES
+            Author: John O'Neill Sr.
+            Company: Azure Innovators
+            Create Date: 01/08/2025
+            Version: 1.0.0
+            Change Date: 
+            Change Purpose:
+        #>
         $form.Close()
     })
     
@@ -491,16 +920,17 @@ Write-Host @"
 
 ╔════════════════════════════════════════════════════════════════════╗
 ║                                                                    ║
-║           LOGISTICS AUTOMATION SUITE v2.0                          ║
+║           LOGISTICS AUTOMATION SUITE v2.4.0                        ║
 ║           JT Custom Trailers                                       ║
 ║                                                                    ║
 ║           Complete freight quote automation system                 ║
 ║           with analytics & performance tracking                    ║
 ║                                                                    ║
-║           NEW IN v2.0:                                             ║
-║           • Analytics Dashboard with cost trends                   ║
-║           • Carrier performance metrics & tracking                 ║
-║           • Universal PDF invoice parser                           ║
+║           NEW IN v2.4.0:                                           ║
+║           • Automatic PDF conversion with Foxit/Edge/Chrome        ║
+║           • Fast, reliable PDF creation in 3-5 seconds             ║
+║           • No more Word COM automation or overnight hangs!        ║
+║           • Reusable PDF helper for all your scripts               ║
 ║                                                                    ║
 ╚════════════════════════════════════════════════════════════════════╝
 
@@ -515,12 +945,14 @@ $requiredScripts = @(
     @{ Name = "Freight-Recipient-Manager.ps1"; Required = $true },
     @{ Name = "Auction-Quote-Tracker.ps1"; Required = $true },
     @{ Name = "Generate-LogisticsEmail.ps1"; Required = $true },
+    @{ Name = "Convert-HTMLtoPDF.ps1"; Required = $false; Important = $true },
     @{ Name = "Logistics-Analytics-Dashboard.ps1"; Required = $false; New = $true },
     @{ Name = "Generic-PDF-Invoice-Parser.ps1"; Required = $false; New = $true }
 )
 
 $missingScripts = @()
 $newScripts = @()
+$importantMissing = @()
 
 foreach ($scriptInfo in $requiredScripts) {
     $scriptPath = Join-Path $script:ScriptDirectory $scriptInfo.Name
@@ -528,12 +960,18 @@ foreach ($scriptInfo in $requiredScripts) {
         if ($scriptInfo.Required) {
             $missingScripts += $scriptInfo.Name
         }
+        elseif ($scriptInfo.Important) {
+            $importantMissing += $scriptInfo.Name
+        }
         else {
             $newScripts += $scriptInfo.Name
         }
     }
     elseif ($scriptInfo.New) {
         Write-Host "Found new feature: $($scriptInfo.Name)" -ForegroundColor Green
+    }
+    elseif ($scriptInfo.Important) {
+        Write-Host "Found PDF helper: $($scriptInfo.Name)" -ForegroundColor Green
     }
 }
 
@@ -545,6 +983,18 @@ if ($missingScripts.Count -gt 0) {
     Write-Host "`nPlease ensure all scripts are in the same directory." -ForegroundColor Yellow
     Write-Host "Press any key to continue anyway..." -ForegroundColor Gray
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+}
+
+if ($importantMissing.Count -gt 0) {
+    Write-Host "`nIMPORTANT: PDF conversion helper is missing:" -ForegroundColor Yellow
+    foreach ($missing in $importantMissing) {
+        Write-Host "   - $missing" -ForegroundColor Red
+    }
+    Write-Host "`nWithout this helper:" -ForegroundColor Yellow
+    Write-Host "   • PDF creation will fall back to manual mode" -ForegroundColor Gray
+    Write-Host "   • You'll need to press Ctrl+P to create PDFs" -ForegroundColor Gray
+    Write-Host "`nDownload from: https://github.com/JONeillSr/Shipping-Management" -ForegroundColor Cyan
+    Write-Host ""
 }
 
 if ($newScripts.Count -gt 0) {

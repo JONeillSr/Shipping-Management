@@ -14,10 +14,13 @@
     Directory containing lot images (format: lotnumber.jpg)
     
 .PARAMETER OutputDirectory
-    Directory where HTML emails and PDFs will be saved
+    Directory where HTML emails and PDFs will be saved (defaults to config file location\Output)
     
 .PARAMETER LogDirectory
-    Directory for log files (default: .\Logs)
+    Directory for log files (defaults to config file location\Logs)
+    
+.PARAMETER ConfigPath
+    Path to JSON configuration file with auction details
     
 .PARAMETER ShowDashboard
     Switch to display the interactive dashboard after processing
@@ -26,23 +29,54 @@
     .\Generate-LogisticsEmail.ps1 -CSVPath ".\auction_data.csv" -ImageDirectory ".\LotImages" -OutputDirectory ".\Output"
     
 .EXAMPLE
-    .\Generate-LogisticsEmail.ps1 -CSVPath ".\data.csv" -ImageDirectory ".\Images" -ShowDashboard
+    .\Generate-LogisticsEmail.ps1 -CSVPath ".\data.csv" -ImageDirectory ".\Images" -ConfigPath ".\config.json" -ShowDashboard
     
 .NOTES
     Author: John O'Neill Sr.
     Company: Azure Innovators
-    Create Date: 2025-01-07
-    Version: 1.0.0
-    Change Date: 
-    Change Purpose: Initial Release
+    Create Date: 01/07/2025
+    Version: 1.5.4
+    Change Date: 10/10/2025
+    Change Purpose: Fixed apostrophe in username (O'Neill) breaking PDF conversion
+
+.CHANGELOG
+    1.5.4 - 10/10/2025 - Helper uses C:\Temp instead of user temp folder
+                       - Fixes apostrophe in username breaking command-line parsing
+                       - Solves Edge/Chrome "exit code 1" with special characters in paths
+    1.5.3 - 10/10/2025 - Helper script now handles OneDrive OUTPUT paths too
+                       - Creates PDF in temp, then copies to OneDrive
+    1.5.2 - 10/10/2025 - Helper script now handles OneDrive paths automatically
+                       - Creates temp copies for conversion (fixes Edge/Chrome issues)
+    1.5.1 - 10/10/2025 - Added detailed PDF conversion output for debugging
+                       - Removed -Quiet flag to show all conversion steps
+                       - Opens Explorer to PDF location on success
+    1.5.0 - 10/10/2025 - Integrated Convert-HTMLtoPDF.ps1 helper script
+                       - Automatic PDF conversion using Foxit, Edge, or Chrome
+                       - Removed unreliable Word COM automation completely
+                       - Fast, reliable PDF creation in 3-5 seconds
+    1.4.0 - 10/10/2025 - Word PDF conversion now DISABLED by default (prevents hanging)
+                       - Added -TryWordPDFConversion parameter for optional Word conversion
+                       - Provides clear manual PDF creation instructions instead
+    1.3.1 - 10/09/2025 - Added timeout protection to Word PDF conversion (45s default)
+                       - Improved error handling for Word COM automation
+                       - Better process cleanup to prevent hanging
+    1.3.0 - 10/09/2025 - Logs now stored in Logs subdirectory of config file location
+                       - Output now stored in Output subdirectory of config file location
+    1.2.0 - 10/09/2025 - Fixed special notes bullet encoding (now uses HTML list)
+                       - Added prominent display of HTML file absolute path
+    1.1.1 - 10/09/2025 - Fixed Word PDF conversion path issues (now uses absolute paths)
+                       - Fixed Outlook attachment path issues (now uses absolute paths)
+    1.1.0 - 10/09/2025 - Modified New-LogisticsEmailHTML to use config file data
+    1.0.0 - 01/07/2025 - Initial Release
 
 .LINK
-    https://github.com/Azure-Innovators/LogisticsAutomation
+    https://github.com/JONeillSr/Shipping-Management
     
 .COMPONENT
     Requires PowerShell 5.1 or higher
     Requires PSWritePDF module for PDF generation
     Requires ImportExcel module for Excel processing
+    Requires Convert-HTMLtoPDF.ps1 helper script (optional but recommended)
 #>
 
 [CmdletBinding()]
@@ -65,30 +99,45 @@ param (
     [ValidateRange(1,20)]
     [int]$MaxImagesPerLot = 3,
 
+    [Parameter(Mandatory=$false)]
     [switch]$CreateOutlookDraft,
 
-    [switch]$ShowDashboard
-    # NEW: Config/Template-based email mode
+    [Parameter(Mandatory=$false)]
+    [switch]$ShowDashboard,
+    
     [Parameter(Mandatory=$false)]
     [ValidateScript({Test-Path $_ -PathType Leaf})]
     [string]$ConfigPath,
 
     [Parameter(Mandatory=$false)]
-    [ValidateScript({Test-Path $_ -PathType Leaf})]
-    [string]$TemplatePath,
-
-    [Parameter(Mandatory=$false)]
-    [string]$TemplateTo,
-
-    [Parameter(Mandatory=$false)]
     [string]$RequesterName = $env:USERNAME,
 
     [Parameter(Mandatory=$false)]
-    [string]$RequesterPhone = "",
-
-    [switch]$OpenAfterCreateTemplate
-
+    [string]$RequesterPhone = ""
 )
+
+#region Load Helper Scripts
+# Load PDF conversion helper (optional but highly recommended)
+$helperScript = Join-Path $PSScriptRoot "Convert-HTMLtoPDF.ps1"
+$script:PDFHelperAvailable = $false
+
+if (Test-Path $helperScript) {
+    try {
+        . $helperScript
+        $script:PDFHelperAvailable = $true
+        Write-Host "✓ Loaded PDF conversion helper (Foxit/Edge/Chrome support)" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "⚠️  Failed to load PDF helper: $_" -ForegroundColor Yellow
+        Write-Host "   PDF conversion will not be available" -ForegroundColor Gray
+    }
+}
+else {
+    Write-Host "⚠️  PDF helper not found: $helperScript" -ForegroundColor Yellow
+    Write-Host "   Download from: https://github.com/JONeillSr/Shipping-Management" -ForegroundColor Gray
+    Write-Host "   Continuing without automatic PDF conversion..." -ForegroundColor Gray
+}
+#endregion
 
 #region Module Requirements
 # Check and install required modules
@@ -110,7 +159,7 @@ function Initialize-Logging {
     .NOTES
         Author: John O'Neill Sr.
         Company: Azure Innovators
-        Create Date: 2025-01-07
+        Create Date: 01/07/2025
         Version: 1.0.0
         Change Date: 
         Change Purpose:
@@ -138,9 +187,10 @@ function Initialize-Logging {
     }
     
     Write-Log "=== Logistics Email Automation Started ===" -Level "INFO"
-    Write-Log "Script Version: 1.0.0" -Level "INFO"
+    Write-Log "Script Version: 1.5.4" -Level "INFO"
     Write-Log "User: $env:USERNAME" -Level "INFO"
     Write-Log "Machine: $env:COMPUTERNAME" -Level "INFO"
+    Write-Log "PDF Helper Available: $script:PDFHelperAvailable" -Level "INFO"
 }
 
 function Write-Log {
@@ -150,7 +200,7 @@ function Write-Log {
     .NOTES
         Author: John O'Neill Sr.
         Company: Azure Innovators
-        Create Date: 2025-01-07
+        Create Date: 01/07/2025
         Version: 1.0.0
         Change Date: 
         Change Purpose:
@@ -183,82 +233,38 @@ function Write-Log {
 }
 #endregion
 
-
-#region Template Engine (ConfigPath mode)
-function Get-Json {
-    param([Parameter(Mandatory)][string]$Path)
-    if (!(Test-Path -LiteralPath $Path)) { throw "File not found: $Path" }
-    Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json -Depth 50
-}
-
-function Get-Template {
-    param([Parameter(Mandatory)][string]$Path)
-    if (!(Test-Path -LiteralPath $Path)) { throw "Template not found: $Path" }
-    Get-Content -LiteralPath $Path -Raw
-}
-
-function Get-ValueByPath {
-    param([Parameter(Mandatory)]$Root, [Parameter(Mandatory)][string]$Path)
-    $node = $Root
-    foreach ($part in ($Path -split '\.')) {
-        if ($null -eq $node) { return $null }
-        if ($part -match '^(?<name>[^\[]+)\[(?<idx>\d+)\]$') {
-            $name = $Matches.name; $idx = [int]$Matches.idx
-            if ($node.PSObject.Properties[$name]) { $node = $node.$name }
-            elseif ($node -is [hashtable] -and $node.ContainsKey($name)) { $node = $node[$name] }
-            else { return $null }
-            if ($node -is [System.Collections.IList] -and $idx -lt $node.Count) { $node = $node[$idx] } else { return $null }
-            continue
-        }
-        if ($node -is [hashtable]) {
-            if ($node.ContainsKey($part)) { $node = $node[$part] } else { return $null }
-        } else {
-            if ($node.PSObject.Properties[$part]) { $node = $node.$part } else { return $null }
-        }
+#region Configuration Loading
+function Get-AuctionConfig {
+    <#
+    .SYNOPSIS
+        Loads and parses JSON configuration file
+    .NOTES
+        Author: John O'Neill Sr.
+        Company: Azure Innovators
+        Create Date: 10/09/2025
+        Version: 1.0.0
+        Change Date: 
+        Change Purpose: Load config for email generation
+    #>
+    param(
+        [string]$ConfigPath
+    )
+    
+    if (-not $ConfigPath -or -not (Test-Path $ConfigPath)) {
+        Write-Log "No config file provided or file not found" -Level "DEBUG"
+        return $null
     }
-    return $node
-}
-
-function Format-ForEmail {
-    param($Value)
-    if ($null -eq $Value) { return "" }
-    switch ($Value.GetType().Name) {
-        {$_ -in @("Object[]","List`1","ArrayList")} {
-            ($Value | ForEach-Object { $s = (Format-ForEmail $_); if ($s) { "- $s" } }) -join [Environment]::NewLine
-        }
-        "DateTime" { $Value.ToString("dddd, MMMM d, yyyy h:mm tt") }
-        default {
-            if ($Value -is [PSCustomObject] -or $Value -is [hashtable]) {
-                ($Value | ConvertTo-Json -Depth 10 -Compress)
-            } else { "$Value" }
-        }
+    
+    try {
+        Write-Log "Loading configuration from: $ConfigPath" -Level "INFO"
+        $config = Get-Content -Path $ConfigPath -Raw | ConvertFrom-Json
+        Write-Log "Configuration loaded successfully" -Level "SUCCESS"
+        return $config
     }
-}
-
-function Expand-Template {
-    param([string]$Template, $Model)
-    $pattern = '\{\{\s*([^\}]+?)\s*\}\}'
-    [regex]::Replace($Template, $pattern, { param($m)
-        $path = $m.Groups[1].Value.Trim()
-        $val  = Get-ValueByPath -Root $Model -Path $path
-        (Format-ForEmail $val)
-    })
-}
-
-function Extract-SubjectAndBody {
-    param([string]$Expanded)
-    $subject = $null; $body = $Expanded
-    $lines = $Expanded -split '\r?\n'
-    for ($i=0; $i -lt $lines.Count; $i++) {
-        $line = $lines[$i].Trim()
-        if ($line -match '^(?i)Subject:\s*(.+)$') {
-            $subject = $Matches[1].Trim()
-            $lines.RemoveAt($i)
-            $body = ($lines -join [Environment]::NewLine).TrimStart()
-            break
-        } elseif ($line -ne "") { break }
+    catch {
+        Write-Log "Failed to load configuration: $_" -Level "ERROR"
+        return $null
     }
-    [pscustomobject]@{ Subject=$subject; Body=$body }
 }
 #endregion
 
@@ -270,7 +276,7 @@ function Import-AuctionData {
     .NOTES
         Author: John O'Neill Sr.
         Company: Azure Innovators
-        Create Date: 2025-01-07
+        Create Date: 01/07/2025
         Version: 1.0.0
         Change Date: 
         Change Purpose:
@@ -289,7 +295,7 @@ function Import-AuctionData {
         Write-Log "Successfully imported $($Data.Count) lots" -Level "SUCCESS"
         
         # Validate required columns
-        $RequiredColumns = @('Lot', 'Description', 'Address')
+        $RequiredColumns = @('Lot', 'Description')
         $MissingColumns = $RequiredColumns | Where-Object { $_ -notin $Data[0].PSObject.Properties.Name }
         
         if ($MissingColumns) {
@@ -311,9 +317,9 @@ function Get-LotImages {
     .NOTES
         Author: John O'Neill Sr.
         Company: Azure Innovators
-        Create Date: 2025-01-07
+        Create Date: 01/07/2025
         Version: 1.2.1
-        Change Date: 2025-01-07
+        Change Date: 01/07/2025
         Change Purpose: Fixed numerical sorting for image selection
     #>
     param (
@@ -340,7 +346,6 @@ function Get-LotImages {
         }
         
         # Priority 2: Numbered images (lotnumber-2.jpg, lotnumber-3.jpg, etc.)
-        # Find all numbered images first
         $NumberedImages = @()
         for ($i = 2; $i -le 30; $i++) {
             $NumberedImagePath = Join-Path $ImageDir "$LotNumber-$i.jpg"
@@ -348,30 +353,28 @@ function Get-LotImages {
                 $NumberedImages += @{
                     Path = $NumberedImagePath
                     Priority = 2
-                    SortOrder = $i  # Use the actual number for sorting
+                    SortOrder = $i
                     Type = "Image$i"
                 }
             }
         }
         
-        # Add numbered images sorted by their actual number
         $AllFoundImages += $NumberedImages | Sort-Object SortOrder
         
-        # Priority 3: Lettered variants (for different angles/views)
+        # Priority 3: Lettered variants
         foreach ($letter in @('a','b','c','d','e','f')) {
             $LetterImagePath = Join-Path $ImageDir "$LotNumber-$letter.jpg"
             if (Test-Path $LetterImagePath) {
                 $AllFoundImages += @{
                     Path = $LetterImagePath
                     Priority = 3
-                    SortOrder = 100 + [int][char]$letter  # Convert letter to number for sorting
+                    SortOrder = 100 + [int][char]$letter
                     Type = "Variant-$letter"
                 }
             }
         }
         
         if ($AllFoundImages.Count -gt 0) {
-            # Sort by priority first, then by sort order (which is now numerical)
             $SelectedImages = $AllFoundImages | 
                 Sort-Object Priority, SortOrder | 
                 Select-Object -First $MaxImagesPerLot
@@ -380,7 +383,6 @@ function Get-LotImages {
             
             Write-Log "Lot $LotNumber`: Found $($AllFoundImages.Count) images, including $($ImagePaths.Count) (max: $MaxImagesPerLot)" -Level "DEBUG"
             
-            # Log which images were selected for debugging
             $selectedNames = $SelectedImages | ForEach-Object { Split-Path $_.Path -Leaf }
             Write-Log "  Selected: $($selectedNames -join ', ')" -Level "DEBUG"
 
@@ -397,10 +399,6 @@ function Get-LotImages {
                 ImageCount = $ImagePaths.Count
                 TotalFound = $AllFoundImages.Count
                 FileSize = ($ImagePaths | ForEach-Object { (Get-Item $_).Length } | Measure-Object -Sum).Sum
-            }
-            
-            if ($AllFoundImages.Count -gt $MaxImagesPerLot) {
-                Write-Log "Lot $LotNumber has $($AllFoundImages.Count) images, selected: $(($SelectedImages.Type) -join ', ')" -Level "INFO"
             }
         }
         else {
@@ -425,9 +423,9 @@ function New-LotPDF {
     .NOTES
         Author: John O'Neill Sr.
         Company: Azure Innovators
-        Create Date: 2025-01-07
+        Create Date: 01/07/2025
         Version: 1.2.1
-        Change Date: 2025-01-07
+        Change Date: 01/07/2025
         Change Purpose: Fixed ImagePaths array handling
     #>
     param (
@@ -447,7 +445,8 @@ function New-LotPDF {
         
         Write-Log "Generating image report for $($Images.Count) lots with $totalImageCount total images" -Level "INFO"
         
-        $ReportPath = Join-Path $OutputPath ("AuctionLots_" + (Get-Date -Format "yyyyMMdd_HHmmss") + ".html")
+        # Use absolute path for report
+        $ReportPath = Join-Path (Resolve-Path $OutputPath).Path ("AuctionLots_" + (Get-Date -Format "yyyyMMdd_HHmmss") + ".html")
         
         $html = @"
 <!DOCTYPE html>
@@ -545,7 +544,6 @@ function New-LotPDF {
         <div class="image-container">
 "@
             
-            # Check if ImagePaths exists and is an array
             if ($LotInfo.ImagePaths) {
                 $imageNum = 1
                 $totalForLot = $LotInfo.ImagePaths.Count
@@ -557,7 +555,6 @@ function New-LotPDF {
                         "Lot Image" 
                     }
                     
-                    # Convert to base64 for embedding
                     if ($imagePath -and (Test-Path $imagePath)) {
                         try {
                             $imageBytes = [System.IO.File]::ReadAllBytes($imagePath)
@@ -603,10 +600,8 @@ function New-LotPDF {
         $html | Out-File -FilePath $ReportPath -Encoding UTF8
         
         Write-Log "Image report generated successfully: $ReportPath" -Level "SUCCESS"
-        Write-Log "Open the HTML file and use Print > Save as PDF for final PDF" -Level "INFO"
         $script:ProcessingStats.PDFsGenerated++
         
-        # Auto-open the report
         Start-Process $ReportPath
         
         return $ReportPath
@@ -616,85 +611,86 @@ function New-LotPDF {
         throw
     }
 }
-
-function ConvertTo-PDF {
-    <#
-    .SYNOPSIS
-        Converts HTML file to PDF using Microsoft Word
-    .NOTES
-        Author: John O'Neill Sr.
-        Company: Azure Innovators
-        Create Date: 2025-01-07
-        Version: 1.0.0
-        Change Date: 
-        Change Purpose: Generate actual PDF files
-    #>
-    param (
-        [string]$HTMLPath,
-        [string]$OutputDirectory
-    )
-    
-    try {
-        Write-Log "Converting HTML to PDF using Word" -Level "INFO"
-        
-        # Create Word COM object
-        $Word = New-Object -ComObject Word.Application
-        $Word.Visible = $false
-        
-        # Open HTML file
-        $Document = $Word.Documents.Open($HTMLPath)
-        
-        # Generate PDF filename
-        $PDFPath = Join-Path $OutputDirectory ("AuctionLots_" + (Get-Date -Format "yyyyMMdd_HHmmss") + ".pdf")
-        
-        # Save as PDF (17 = PDF format)
-        $Document.SaveAs2($PDFPath, 17)
-        
-        # Close and cleanup
-        $Document.Close()
-        $Word.Quit()
-        
-        [System.Runtime.InteropServices.Marshal]::ReleaseComObject($Document) | Out-Null
-        [System.Runtime.InteropServices.Marshal]::ReleaseComObject($Word) | Out-Null
-        [System.GC]::Collect()
-        [System.GC]::WaitForPendingFinalizers()
-        
-        Write-Log "PDF created successfully: $PDFPath" -Level "SUCCESS"
-        return $PDFPath
-    }
-    catch {
-        Write-Log "Failed to convert to PDF: $_" -Level "ERROR"
-        Write-Log "Falling back to HTML report" -Level "WARNING"
-        return $null
-    }
-}
 #endregion
 
 #region HTML Email Generation
 function New-LogisticsEmailHTML {
     <#
     .SYNOPSIS
-        Generates formatted HTML email matching Word template
+        Generates formatted HTML email using config file data when available
     .NOTES
         Author: John O'Neill Sr.
         Company: Azure Innovators
-        Create Date: 2025-01-07
-        Version: 1.0.1
-        Change Date: 2025-01-07
-        Change Purpose: Added lot numbers to item list
+        Create Date: 01/07/2025
+        Version: 1.2.0
+        Change Date: 10/09/2025
+        Change Purpose: Fixed special notes encoding with proper HTML lists
     #>
     param (
         [array]$LotData,
-        [string]$PDFPath
+        [string]$PDFPath,
+        [object]$Config = $null
     )
     
     try {
         Write-Log "Generating HTML email for $($LotData.Count) lots" -Level "INFO"
         
-        # Get unique pickup address (assuming all lots from same auction)
-        $PickupAddress = $LotData[0].Address.Trim()
+        # Get data from config if available, otherwise use defaults/CSV
+        $pickupAddress = if ($Config -and $Config.auction_info.pickup_address) {
+            $Config.auction_info.pickup_address
+        } elseif ($LotData[0].Address) {
+            $LotData[0].Address.Trim()
+        } else {
+            "[Pickup address not specified]"
+        }
         
-        # Build items list with lot numbers and quantities
+        $deliveryAddress = if ($Config -and $Config.delivery_address) {
+            $Config.delivery_address
+        } else {
+            "1218 Lake Avenue, Ashtabula, OH 44004"
+        }
+        
+        $logisticsContact = if ($Config -and $Config.auction_info.logistics_contact) {
+            "Phone: $($Config.auction_info.logistics_contact.phone)<br>Email: $($Config.auction_info.logistics_contact.email)"
+        } else {
+            "[Contact information not available]"
+        }
+        
+        $pickupDateTime = if ($Config -and $Config.auction_info.pickup_datetime) {
+            $Config.auction_info.pickup_datetime
+        } else {
+            "[To be determined]"
+        }
+        
+        $deliveryDateTime = if ($Config -and $Config.auction_info.delivery_datetime) {
+            $Config.auction_info.delivery_datetime
+        } else {
+            "[To be determined]"
+        }
+        
+        # Build shipping requirements section
+        $shippingReqs = ""
+        if ($Config -and $Config.shipping_requirements) {
+            $reqs = $Config.shipping_requirements
+            $shippingReqs = "<p><strong>SHIPPING REQUIREMENTS:</strong><br>"
+            if ($reqs.truck_types) { $shippingReqs += "Truck Types: $($reqs.truck_types)<br>" }
+            if ($reqs.labor_needed) { $shippingReqs += "Labor Needed: $($reqs.labor_needed)<br>" }
+            if ($reqs.total_pallets) { $shippingReqs += "Estimated Pallets: $($reqs.total_pallets)<br>" }
+            if ($reqs.weight_notes) { $shippingReqs += "Weight: $($reqs.weight_notes)<br>" }
+            $shippingReqs += "</p>"
+        }
+        
+        # Build special notes section
+        $specialNotes = ""
+        if ($Config -and $Config.auction_info.special_notes) {
+            $specialNotes = "<p><strong>SPECIAL NOTES:</strong></p><ul>"
+            foreach ($note in $Config.auction_info.special_notes) {
+                $specialNotes += "<li>$note</li>"
+            }
+            $specialNotes += "</ul>"
+        }
+        
+        # Build items list with lot numbers
         $ItemsList = ""
         foreach ($Lot in $LotData) {
             $qtyText = if ($Lot.Quantity) { " (Qty: $($Lot.Quantity))" } else { "" }
@@ -726,25 +722,25 @@ function New-LogisticsEmailHTML {
     
     <p>We have an online auction that's closed with $($LotData.Count) lots we won to pick up. Here is the information:</p>
     
-    <p><strong>PICKUP ADDRESS</strong>: $PickupAddress</p>
+    <p><strong>PICKUP ADDRESS:</strong> $pickupAddress</p>
     
-    <p><strong>DELIVERY ADDRESS:</strong> 1218 Lake Avenue, Ashtabula, OH 44004</p>
+    <p><strong>DELIVERY ADDRESS:</strong> $deliveryAddress</p>
     
-    <p><strong>AUCTION LOGISTICS CONTACT:</strong></p>
+    <p><strong>AUCTION LOGISTICS CONTACT:</strong><br>$logisticsContact</p>
     
-    <p><strong>PICKUP DATE/TIME:</strong></p>
+    <p><strong>PICKUP DATE/TIME:</strong> $pickupDateTime</p>
     
-    <p><strong>DELIVERY DATE/TIME:</strong></p>
+    <p><strong>DELIVERY DATE/TIME:</strong> $deliveryDateTime</p>
     
-    <p><strong>SPECIAL NOTES:</strong></p>
+    $shippingReqs
+    
+    $specialNotes
     
     <p>The items (pictures in the attached PDF referenced by Lot Number) are:</p>
     
     <ul>
 $ItemsList
     </ul>
-    
-    <p>For this shipment, we believe two trucks are necessary. Please select the type of trucks based on the items being picked up, truck availability, and lowest cost.</p>
     
     <p>Please send me a quote at your earliest opportunity.</p>
     
@@ -775,7 +771,7 @@ function New-OutlookDraftEmail {
     .NOTES
         Author: John O'Neill Sr.
         Company: Azure Innovators
-        Create Date: 2025-01-07
+        Create Date: 01/07/2025
         Version: 1.0.0
         Change Date: 
         Change Purpose:
@@ -791,11 +787,9 @@ function New-OutlookDraftEmail {
     try {
         Write-Log "Creating Outlook draft email" -Level "INFO"
         
-        # Create Outlook COM object
         $Outlook = New-Object -ComObject Outlook.Application
-        $Mail = $Outlook.CreateItem(0)  # 0 = Mail item
+        $Mail = $Outlook.CreateItem(0)
         
-        # Set email properties
         $Mail.Subject = $Subject
         $Mail.HTMLBody = $HTMLContent
         
@@ -803,25 +797,27 @@ function New-OutlookDraftEmail {
             $Mail.To = $To
         }
         
-        # Add attachments
+        # Add attachments with absolute paths
         foreach ($Attachment in $Attachments) {
             if (Test-Path $Attachment) {
-                $Mail.Attachments.Add($Attachment) | Out-Null
-                Write-Log "Added attachment: $(Split-Path $Attachment -Leaf)" -Level "DEBUG"
+                # Convert to absolute path if relative
+                $AbsolutePath = (Resolve-Path $Attachment).Path
+                $Mail.Attachments.Add($AbsolutePath) | Out-Null
+                Write-Log "Added attachment: $(Split-Path $AbsolutePath -Leaf)" -Level "DEBUG"
+            }
+            else {
+                Write-Log "Attachment not found: $Attachment" -Level "WARNING"
             }
         }
         
-        # Save as draft
         $Mail.Save()
         
-        # Display if requested
         if ($Display) {
             $Mail.Display()
         }
         
         Write-Log "Outlook draft email created successfully" -Level "SUCCESS"
         
-        # Release COM objects
         [System.Runtime.InteropServices.Marshal]::ReleaseComObject($Mail) | Out-Null
         [System.Runtime.InteropServices.Marshal]::ReleaseComObject($Outlook) | Out-Null
         [System.GC]::Collect()
@@ -843,7 +839,6 @@ function Show-Dashboard {
         [hashtable]$Stats
     )
     
-    # Add pause to review any errors
     Write-Host "`nPress Enter to view dashboard..." -ForegroundColor Yellow
     Read-Host
     
@@ -857,7 +852,6 @@ function Show-Dashboard {
     Write-Host "╠════════════════════════════════════════════════════════════╣" -ForegroundColor Cyan
     Write-Host "║                                                            ║" -ForegroundColor Cyan
     
-    # Processing Summary
     Write-Host "║  📊 PROCESSING SUMMARY                                    ║" -ForegroundColor Yellow
     Write-Host "║  ─────────────────────────────────────────────────────    ║" -ForegroundColor Gray
     Write-Host "║  Total Lots Processed: $($Stats.TotalLots.ToString().PadLeft(10))                          ║" -ForegroundColor White
@@ -867,7 +861,6 @@ function Show-Dashboard {
     Write-Host "║  Emails Generated:     $($Stats.EmailsGenerated.ToString().PadLeft(10))                          ║" -ForegroundColor Green
     Write-Host "║                                                            ║" -ForegroundColor Cyan
     
-    # Performance Metrics
     Write-Host "║  ⏱️  PERFORMANCE METRICS                                   ║" -ForegroundColor Yellow
     Write-Host "║  ─────────────────────────────────────────────────────    ║" -ForegroundColor Gray
     Write-Host "║  Processing Time:      $($Duration.ToString('mm\:ss').PadLeft(10))                          ║" -ForegroundColor White
@@ -875,8 +868,6 @@ function Show-Dashboard {
     Write-Host "║  End Time:             $(($EndTime.ToString('HH:mm:ss')).PadLeft(10))                          ║" -ForegroundColor White
     Write-Host "║                                                            ║" -ForegroundColor Cyan
     
-    # Success Rate Graph - FIXED CALCULATION
-    # Calculate based on lots with images vs total lots
     $LotsWithImages = if ($Stats.TotalLots -gt 0 -and $Stats.ImagesMissing -ge 0) {
         $Stats.TotalLots - $Stats.ImagesMissing
     } else { $Stats.TotalLots }
@@ -885,7 +876,6 @@ function Show-Dashboard {
         [math]::Round(($LotsWithImages / $Stats.TotalLots) * 100, 2) 
     } else { 0 }
     
-    # Ensure success rate is capped at 100%
     $SuccessRate = [math]::Min($SuccessRate, 100)
     
     Write-Host "║  📈 LOT IMAGE COVERAGE                                     ║" -ForegroundColor Yellow
@@ -893,7 +883,7 @@ function Show-Dashboard {
     
     $BarLength = 40
     $FilledLength = [math]::Floor($SuccessRate / 100 * $BarLength)
-    $FilledLength = [math]::Max(0, [math]::Min($FilledLength, $BarLength))  # Ensure between 0 and BarLength
+    $FilledLength = [math]::Max(0, [math]::Min($FilledLength, $BarLength))
     $EmptyLength = $BarLength - $FilledLength
     $Bar = "█" * $FilledLength + "░" * $EmptyLength
     
@@ -907,7 +897,6 @@ function Show-Dashboard {
     
     Write-Host "║                                                            ║" -ForegroundColor Cyan
     
-    # Data Sources
     Write-Host "║  📁 DATA SOURCES                                           ║" -ForegroundColor Yellow
     Write-Host "║  ─────────────────────────────────────────────────────    ║" -ForegroundColor Gray
     foreach ($Source in $Stats.DataSources) {
@@ -922,7 +911,6 @@ function Show-Dashboard {
     Write-Host "╚════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
     Write-Host ""
     
-    # Action Items
     if ($Stats.ImagesMissing -gt 0) {
         Write-Host "⚠️  WARNING: $($Stats.ImagesMissing) lots are missing images!" -ForegroundColor Yellow
         Write-Host "   Check the image directory for missing .jpg files" -ForegroundColor Gray
@@ -941,7 +929,7 @@ function Export-ProcessingReport {
     .NOTES
         Author: John O'Neill Sr.
         Company: Azure Innovators
-        Create Date: 2025-01-07
+        Create Date: 01/07/2025
         Version: 1.0.0
         Change Date: 
         Change Purpose:
@@ -967,8 +955,6 @@ function Export-ProcessingReport {
         th { background-color: #3498db; color: white; }
         tr:nth-child(even) { background-color: #f2f2f2; }
         .summary { background-color: #ecf0f1; padding: 20px; border-radius: 5px; margin: 20px 0; }
-        .warning { background-color: #fff3cd; padding: 10px; border-left: 4px solid #ffc107; margin: 10px 0; }
-        .success { background-color: #d4edda; padding: 10px; border-left: 4px solid #28a745; margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -988,7 +974,6 @@ function Export-ProcessingReport {
         <tr>
             <th>Lot Number</th>
             <th>Description</th>
-            <th>Address</th>
             <th>Quantity</th>
             <th>Image Status</th>
         </tr>
@@ -1005,7 +990,6 @@ function Export-ProcessingReport {
         <tr>
             <td>$($Lot.Lot)</td>
             <td>$($Lot.Description)</td>
-            <td>$($Lot.Address)</td>
             <td>$($Lot.Quantity)</td>
             <td>$ImageStatus</td>
         </tr>
@@ -1027,86 +1011,99 @@ function Export-ProcessingReport {
 
 #region Main Execution
 try {
-    # Initialize
+    # Determine log directory based on config file location if provided
+    if ($ConfigPath -and (Test-Path $ConfigPath)) {
+        $configDir = Split-Path $ConfigPath -Parent
+        $LogDirectory = Join-Path $configDir "Logs"
+        
+        # Also set Output directory to be with the config if not explicitly specified
+        if ($PSBoundParameters.ContainsKey('OutputDirectory') -eq $false) {
+            $OutputDirectory = Join-Path $configDir "Output"
+        }
+        
+        Write-Host "Using directories based on config location:" -ForegroundColor Cyan
+        Write-Host "  Logs: $LogDirectory" -ForegroundColor Gray
+        Write-Host "  Output: $OutputDirectory" -ForegroundColor Gray
+    }
+    
     Initialize-Logging -LogDir $LogDirectory
     
-    # Create output directory if it doesn't exist
     if (!(Test-Path $OutputDirectory)) {
         New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
         Write-Log "Created output directory: $OutputDirectory" -Level "INFO"
     }
     
-    
-    # --- Config/Template mode (short-circuit the CSV/PDF pipeline) ---
-    if ($PSBoundParameters.ContainsKey('ConfigPath') -and $PSBoundParameters.ContainsKey('TemplatePath')) {
-        Write-Log "Config/Template mode detected. Using -ConfigPath and -TemplatePath to generate email draft." -Level "INFO"
-
-        $config = Get-Json -Path $ConfigPath
-        $meta   = @{
-            requester_name  = $RequesterName
-            requester_phone = $RequesterPhone
+    # Load configuration if provided
+    $config = $null
+    if ($ConfigPath) {
+        $config = Get-AuctionConfig -ConfigPath $ConfigPath
+        if ($config) {
+            Write-Log "Using configuration from: $ConfigPath" -Level "SUCCESS"
         }
-
-        $model = [ordered]@{}
-        $config.PSObject.Properties | ForEach-Object { $model[$_.Name] = $_.Value }
-        $model['_meta'] = $meta
-
-        $templateRaw = Get-Template -Path $TemplatePath
-        $expanded    = Expand-Template -Template $templateRaw -Model $model
-        $sb          = Extract-SubjectAndBody -Expanded $expanded
-
-        $subject = if ($sb.Subject) { $sb.Subject }
-                   elseif ($config.email_subject) { [string]$config.email_subject }
-                   else { "Logistics Request" }
-
-        $body = $sb.Body
-
-        $to = if ($TemplateTo) { $TemplateTo }
-              elseif ($config.auction_info -and $config.auction_info.logistics_contact -and $config.auction_info.logistics_contact.email) {
-                  [string]$config.auction_info.logistics_contact.email
-              } else { "" }
-
-        # Convert plain text to HTML line breaks if needed
-        $htmlBody =
-            if ($body -match '<(html|body|p|br|div)[\s>]' -or $body -match '</') { $body }
-            else { ($body -split '\r?\n' | ForEach-Object { [System.Web.HttpUtility]::HtmlEncode($_) } ) -join "<br/>" }
-
-        if ($CreateOutlookDraft) {
-            try {
-                $null = New-OutlookDraftEmail -HTMLContent $htmlBody -Subject $subject -To $to -Display:$OpenAfterCreateTemplate
-                Write-Log "Draft created via Config/Template mode (Subject: $subject)" -Level "SUCCESS"
-            } catch {
-                Write-Log "Failed to create draft in Config/Template mode: $($_.Exception.Message)" -Level "ERROR"
-                throw
-            }
-        } else {
-            Write-Host "`n=== SUBJECT ===`n$subject`n`n=== BODY (HTML) ===`n$htmlBody"
-        }
-
-        return
     }
-# Import auction data
+    
+    # Import auction data
     Write-Log "Starting data import process" -Level "INFO"
     $AuctionData = Import-AuctionData -CSVPath $CSVPath
     
-    # Process lot images with max image limit
+    # Process lot images
     Write-Log "Processing lot images (max $MaxImagesPerLot per lot)" -Level "INFO"
     $LotImages = Get-LotImages -Lots $AuctionData -ImageDir $ImageDirectory -MaxImagesPerLot $MaxImagesPerLot
 
-    # Generate image report
+    # Generate image report and convert to PDF
     $PDFFilePath = $null
     $ImageReportPath = $null
 
     if ($LotImages.Count -gt 0) {
-        Write-Log "Generating image report with $($LotImages.Count) images" -Level "INFO"
+        Write-Log "Generating HTML image report" -Level "INFO"
         $ImageReportPath = New-LotPDF -Images $LotImages -OutputPath $OutputDirectory -AuctionName "Auction"
         
-        # Try to convert HTML to actual PDF
-        $PDFFilePath = ConvertTo-PDF -HTMLPath $ImageReportPath -OutputDirectory $OutputDirectory
-        
-        if (!$PDFFilePath) {
-            # If PDF conversion failed, use HTML as fallback
-            Write-Log "Using HTML report as attachment" -Level "INFO"
+        # Try automatic PDF conversion using helper script
+        if ($script:PDFHelperAvailable) {
+            Write-Log "Attempting automatic PDF conversion..." -Level "INFO"
+            
+            $PDFPath = Join-Path $OutputDirectory ("AuctionLots_" + (Get-Date -Format "yyyyMMdd_HHmmss") + ".pdf")
+            
+            Write-Host "`n╔════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+            Write-Host "║         PDF CONVERSION - DETAILED OUTPUT                  ║" -ForegroundColor Cyan
+            Write-Host "╚════════════════════════════════════════════════════════════╝`n" -ForegroundColor Cyan
+            
+            try {
+                # Don't use -Quiet so we can see all debugging output
+                $PDFFilePath = ConvertTo-PDFHelper -HTMLPath $ImageReportPath -OutputPath $PDFPath -Method "Auto"
+                
+                if ($PDFFilePath -and (Test-Path $PDFFilePath)) {
+                    Write-Log "PDF created successfully: $(Split-Path $PDFFilePath -Leaf)" -Level "SUCCESS"
+                    Write-Host "`n✓ PDF saved to: $PDFFilePath" -ForegroundColor Green
+                    
+                    # Open the folder containing the PDF
+                    $pdfFolder = Split-Path $PDFFilePath -Parent
+                    Start-Process explorer.exe -ArgumentList "/select,`"$PDFFilePath`""
+                }
+                else {
+                    Write-Log "Automatic PDF conversion failed, using HTML report" -Level "WARNING"
+                    Write-Host "`n⚠️  PDF conversion did not produce a file" -ForegroundColor Yellow
+                    Write-Host "   Using HTML report instead: $ImageReportPath" -ForegroundColor Gray
+                    $PDFFilePath = $ImageReportPath
+                }
+            }
+            catch {
+                Write-Log "Error during PDF conversion: $_" -Level "ERROR"
+                Write-Log "Falling back to HTML report" -Level "WARNING"
+                Write-Host "`n✗ Error: $_" -ForegroundColor Red
+                $PDFFilePath = $ImageReportPath
+            }
+        }
+        else {
+            Write-Log "PDF helper not available, using HTML report" -Level "WARNING"
+            Write-Host "`n" + ("=" * 70) -ForegroundColor Yellow
+            Write-Host "MANUAL PDF CREATION:" -ForegroundColor Yellow
+            Write-Host ("=" * 70) -ForegroundColor Yellow
+            Write-Host "1. HTML report opened in your browser" -ForegroundColor White
+            Write-Host "2. Press Ctrl+P to print" -ForegroundColor White
+            Write-Host "3. Select 'Save as PDF' or your Foxit PDF Printer" -ForegroundColor White
+            Write-Host "4. Save to Output folder" -ForegroundColor White
+            Write-Host ("=" * 70) + "`n" -ForegroundColor Yellow
             $PDFFilePath = $ImageReportPath
         }
     }
@@ -1114,14 +1111,31 @@ try {
         Write-Log "No images found, skipping PDF generation" -Level "WARNING"
     }
     
-    # Generate HTML email
-    Write-Log "Generating HTML email" -Level "INFO"
-    $EmailHTML = New-LogisticsEmailHTML -LotData $AuctionData -PDFPath $PDFFilePath
+    # Generate HTML email using config data
+    Write-Log "Generating HTML email with config data" -Level "INFO"
+    $EmailHTML = New-LogisticsEmailHTML -LotData $AuctionData -PDFPath $PDFFilePath -Config $config
     
-    # Save HTML to file
-    $HTMLFilePath = Join-Path $OutputDirectory ("LogisticsEmail_" + (Get-Date -Format "yyyyMMdd_HHmmss") + ".html")
+    # Determine email subject
+    $emailSubject = if ($config -and $config.email_subject) {
+        $config.email_subject
+    } else {
+        "Freight Quote Request - $(Get-Date -Format 'yyyy-MM-dd')"
+    }
+    
+    # Save HTML to file with absolute path
+    $OutputDirAbsolute = if (Test-Path $OutputDirectory) {
+        (Resolve-Path $OutputDirectory).Path
+    } else {
+        (New-Item -ItemType Directory -Path $OutputDirectory -Force).FullName
+    }
+    
+    $HTMLFilePath = Join-Path $OutputDirAbsolute ("LogisticsEmail_" + (Get-Date -Format "yyyyMMdd_HHmmss") + ".html")
     $EmailHTML | Out-File -FilePath $HTMLFilePath -Encoding UTF8
     Write-Log "HTML email saved to: $HTMLFilePath" -Level "SUCCESS"
+    Write-Host "`n================================================" -ForegroundColor Cyan
+    Write-Host "EMAIL FILE LOCATION:" -ForegroundColor Yellow
+    Write-Host $HTMLFilePath -ForegroundColor Green
+    Write-Host "================================================`n" -ForegroundColor Cyan
 
     # Prepare attachments
     $AttachmentList = @()
@@ -1129,39 +1143,31 @@ try {
         $AttachmentList += $PDFFilePath
     }
 
-    # Check if Outlook draft should be created
+    # Create Outlook draft
     if ($CreateOutlookDraft) {
-        $OutlookCreated = New-OutlookDraftEmail -HTMLContent $EmailHTML -Attachments $AttachmentList -Display
+        $OutlookCreated = New-OutlookDraftEmail -HTMLContent $EmailHTML -Subject $emailSubject -Attachments $AttachmentList -Display
     }
     else {
         $OutlookCreated = $false
         Write-Log "Outlook draft creation skipped (use -CreateOutlookDraft to enable)" -Level "INFO"
     }
 
-    # Fallback to browser if Outlook wasn't created
     if (-not $OutlookCreated) {
         Write-Log "Opening HTML in default browser" -Level "INFO"
         Start-Process $HTMLFilePath
-        
-        if ($CreateOutlookDraft) {
-            # Only show manual instructions if Outlook was attempted but failed
-            Write-Host "`n📧 Manual Email Creation Required:" -ForegroundColor Yellow
-            Write-Host "  1. Open the HTML file in your browser" -ForegroundColor White
-            Write-Host "  2. Press Ctrl+A to select all" -ForegroundColor White
-            Write-Host "  3. Press Ctrl+C to copy" -ForegroundColor White
-            Write-Host "  4. In Outlook, create new email" -ForegroundColor White
-            Write-Host "  5. In the email body, press Ctrl+V to paste" -ForegroundColor White
-            Write-Host "  6. Attach the PDF file manually" -ForegroundColor White
-        }
     }
 
     # Generate processing report
-    $ReportPath = Export-ProcessingReport -OutputPath $OutputDirectory -Stats $script:ProcessingStats -LotData $AuctionData
+    $ReportPath = $null
+    try {
+        $ReportPath = Export-ProcessingReport -OutputPath $OutputDirectory -Stats $script:ProcessingStats -LotData $AuctionData
+    }
+    catch {
+        Write-Log "Skipping processing report: $($_.Exception.Message)" -Level "WARNING"
+    }
     
-    # Update final statistics
     $script:ProcessingStats.ProcessedLots = $AuctionData.Count
     
-    # Show dashboard if requested
     if ($ShowDashboard) {
         Show-Dashboard -Stats $script:ProcessingStats
     }
@@ -1183,7 +1189,6 @@ catch {
     Write-Log "Fatal error: $_" -Level "ERROR"
     Write-Log "Stack Trace: $($_.ScriptStackTrace)" -Level "ERROR"
     
-    # Return error object
     [PSCustomObject]@{
         Success = $false
         Error = $_.Exception.Message
