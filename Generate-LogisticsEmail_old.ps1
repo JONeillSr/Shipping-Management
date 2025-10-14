@@ -1,36 +1,36 @@
 <#
 .SYNOPSIS
     Automated Logistics Quote Email Generator
-
+    
 .DESCRIPTION
     This script automates the creation of formatted HTML emails for logistics companies
     requesting freight quotes. It processes auction data from CSV files, generates
     PDF attachments with item images, and provides comprehensive logging and reporting.
-
+    
 .PARAMETER CSVPath
     Path to the CSV file containing auction lot data
-
+    
 .PARAMETER ImageDirectory
     Directory containing lot images (format: lotnumber.jpg)
-
+    
 .PARAMETER OutputDirectory
     Directory where HTML emails and PDFs will be saved (defaults to config file location\Output)
-
+    
 .PARAMETER LogDirectory
     Directory for log files (defaults to config file location\Logs)
-
+    
 .PARAMETER ConfigPath
     Path to JSON configuration file with auction details
-
+    
 .PARAMETER ShowDashboard
     Switch to display the interactive dashboard after processing
-
+    
 .EXAMPLE
     .\Generate-LogisticsEmail.ps1 -CSVPath ".\auction_data.csv" -ImageDirectory ".\LotImages" -OutputDirectory ".\Output"
-
+    
 .EXAMPLE
     .\Generate-LogisticsEmail.ps1 -CSVPath ".\data.csv" -ImageDirectory ".\Images" -ConfigPath ".\config.json" -ShowDashboard
-
+    
 .NOTES
     Author: John O'Neill Sr.
     Company: Azure Innovators
@@ -71,7 +71,7 @@
 
 .LINK
     https://github.com/JONeillSr/Shipping-Management
-
+    
 .COMPONENT
     Requires PowerShell 5.1 or higher
     Requires PSWritePDF module for PDF generation
@@ -84,17 +84,17 @@ param (
     [Parameter(Mandatory=$true)]
     [ValidateScript({Test-Path $_ -PathType Leaf})]
     [string]$CSVPath,
-
+    
     [Parameter(Mandatory=$true)]
     [ValidateScript({Test-Path $_ -PathType Container})]
     [string]$ImageDirectory,
-
+    
     [Parameter(Mandatory=$false)]
     [string]$OutputDirectory = ".\Output",
-
+    
     [Parameter(Mandatory=$false)]
     [string]$LogDirectory = ".\Logs",
-
+        
     [Parameter(Mandatory=$false)]
     [ValidateRange(1,20)]
     [int]$MaxImagesPerLot = 3,
@@ -104,7 +104,7 @@ param (
 
     [Parameter(Mandatory=$false)]
     [switch]$ShowDashboard,
-
+    
     [Parameter(Mandatory=$false)]
     [ValidateScript({Test-Path $_ -PathType Leaf})]
     [string]$ConfigPath,
@@ -125,17 +125,17 @@ if (Test-Path $helperScript) {
     try {
         . $helperScript
         $script:PDFHelperAvailable = $true
-        Write-Information "✓ Loaded PDF conversion helper (Foxit/Edge/Chrome support)"
+        Write-Host "✓ Loaded PDF conversion helper (Foxit/Edge/Chrome support)" -ForegroundColor Green
     }
     catch {
-        Write-Information "⚠️  Failed to load PDF helper: $_"
-        Write-Information "   PDF conversion will not be available"
+        Write-Host "⚠️  Failed to load PDF helper: $_" -ForegroundColor Yellow
+        Write-Host "   PDF conversion will not be available" -ForegroundColor Gray
     }
 }
 else {
-    Write-Information "⚠️  PDF helper not found: $helperScript"
-    Write-Information "   Download from: https://github.com/JONeillSr/Shipping-Management"
-    Write-Information "   Continuing without automatic PDF conversion..."
+    Write-Host "⚠️  PDF helper not found: $helperScript" -ForegroundColor Yellow
+    Write-Host "   Download from: https://github.com/JONeillSr/Shipping-Management" -ForegroundColor Gray
+    Write-Host "   Continuing without automatic PDF conversion..." -ForegroundColor Gray
 }
 #endregion
 
@@ -144,7 +144,7 @@ else {
 $RequiredModules = @('PSWritePDF', 'ImportExcel')
 foreach ($Module in $RequiredModules) {
     if (!(Get-Module -ListAvailable -Name $Module)) {
-        Write-Information "Installing module: $Module"
+        Write-Host "Installing module: $Module" -ForegroundColor Yellow
         Install-Module -Name $Module -Force -AllowClobber -Scope CurrentUser
     }
     Import-Module $Module -Force
@@ -161,17 +161,17 @@ function Initialize-Logging {
         Company: Azure Innovators
         Create Date: 01/07/2025
         Version: 1.0.0
-        Change Date:
+        Change Date: 
         Change Purpose:
     #>
     param (
         [string]$LogDir
     )
-
+    
     if (!(Test-Path $LogDir)) {
         New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
     }
-
+    
     $script:LogFile = Join-Path $LogDir ("LogisticsEmail_" + (Get-Date -Format "yyyyMMdd_HHmmss") + ".log")
     $script:ErrorLogFile = Join-Path $LogDir ("LogisticsEmail_Errors_" + (Get-Date -Format "yyyyMMdd_HHmmss") + ".log")
     $script:ProcessingStats = @{
@@ -185,14 +185,15 @@ function Initialize-Logging {
         EmailsGenerated = 0
         DataSources = @()
     }
-
-    Write-JTLSLog "=== Logistics Email Automation Started ===" -Level "INFO"
-    Write-JTLSLog "Script Version: 1.5.4" -Level "INFO"
-    Write-JTLSLog "User: $env:USERNAME" -Level "INFO"
-    Write-JTLSLog "Machine: $env:COMPUTERNAME" -Level "INFO"
-    Write-JTLSLog "PDF Helper Available: $script:PDFHelperAvailable" -Level "INFO"
+    
+    Write-Log "=== Logistics Email Automation Started ===" -Level "INFO"
+    Write-Log "Script Version: 1.5.4" -Level "INFO"
+    Write-Log "User: $env:USERNAME" -Level "INFO"
+    Write-Log "Machine: $env:COMPUTERNAME" -Level "INFO"
+    Write-Log "PDF Helper Available: $script:PDFHelperAvailable" -Level "INFO"
 }
-function Write-JTLSLog {
+
+function Write-Log {
     <#
     .SYNOPSIS
         Writes detailed log entries
@@ -201,7 +202,7 @@ function Write-JTLSLog {
         Company: Azure Innovators
         Create Date: 01/07/2025
         Version: 1.0.0
-        Change Date:
+        Change Date: 
         Change Purpose:
     #>
     param (
@@ -209,22 +210,22 @@ function Write-JTLSLog {
         [ValidateSet("INFO", "WARNING", "ERROR", "DEBUG", "SUCCESS")]
         [string]$Level = "INFO"
     )
-
+    
     $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     $LogEntry = "[$Timestamp] [$Level] $Message"
-
+    
     # Write to console with color coding
     switch ($Level) {
-        "ERROR"   { Write-Information $LogEntry }
-        "WARNING" { Write-Information $LogEntry }
-        "SUCCESS" { Write-Information $LogEntry }
-        "DEBUG"   { Write-Information $LogEntry }
-        default   { Write-Information $LogEntry }
+        "ERROR"   { Write-Host $LogEntry -ForegroundColor Red }
+        "WARNING" { Write-Host $LogEntry -ForegroundColor Yellow }
+        "SUCCESS" { Write-Host $LogEntry -ForegroundColor Green }
+        "DEBUG"   { Write-Host $LogEntry -ForegroundColor Gray }
+        default   { Write-Host $LogEntry }
     }
-
+    
     # Write to log file
     Add-Content -Path $script:LogFile -Value $LogEntry
-
+    
     # Write errors to separate error log
     if ($Level -eq "ERROR") {
         Add-Content -Path $script:ErrorLogFile -Value $LogEntry
@@ -242,26 +243,26 @@ function Get-AuctionConfig {
         Company: Azure Innovators
         Create Date: 10/09/2025
         Version: 1.0.0
-        Change Date:
+        Change Date: 
         Change Purpose: Load config for email generation
     #>
     param(
         [string]$ConfigPath
     )
-
+    
     if (-not $ConfigPath -or -not (Test-Path $ConfigPath)) {
-        Write-JTLSLog "No config file provided or file not found" -Level "DEBUG"
+        Write-Log "No config file provided or file not found" -Level "DEBUG"
         return $null
     }
-
+    
     try {
-        Write-JTLSLog "Loading configuration from: $ConfigPath" -Level "INFO"
+        Write-Log "Loading configuration from: $ConfigPath" -Level "INFO"
         $config = Get-Content -Path $ConfigPath -Raw | ConvertFrom-Json
-        Write-JTLSLog "Configuration loaded successfully" -Level "SUCCESS"
+        Write-Log "Configuration loaded successfully" -Level "SUCCESS"
         return $config
     }
     catch {
-        Write-JTLSLog "Failed to load configuration: $_" -Level "ERROR"
+        Write-Log "Failed to load configuration: $_" -Level "ERROR"
         return $null
     }
 }
@@ -277,38 +278,39 @@ function Import-AuctionData {
         Company: Azure Innovators
         Create Date: 01/07/2025
         Version: 1.0.0
-        Change Date:
+        Change Date: 
         Change Purpose:
     #>
     param (
         [string]$CSVPath
     )
-
+    
     try {
-        Write-JTLSLog "Importing CSV data from: $CSVPath" -Level "INFO"
+        Write-Log "Importing CSV data from: $CSVPath" -Level "INFO"
         $script:ProcessingStats.DataSources += $CSVPath
-
+        
         $Data = Import-Csv -Path $CSVPath
         $script:ProcessingStats.TotalLots = $Data.Count
-
-        Write-JTLSLog "Successfully imported $($Data.Count) lots" -Level "SUCCESS"
-
+        
+        Write-Log "Successfully imported $($Data.Count) lots" -Level "SUCCESS"
+        
         # Validate required columns
         $RequiredColumns = @('Lot', 'Description')
         $MissingColumns = $RequiredColumns | Where-Object { $_ -notin $Data[0].PSObject.Properties.Name }
-
+        
         if ($MissingColumns) {
             throw "Missing required columns: $($MissingColumns -join ', ')"
         }
-
+        
         return $Data
     }
     catch {
-        Write-JTLSLog "Failed to import CSV: $_" -Level "ERROR"
+        Write-Log "Failed to import CSV: $_" -Level "ERROR"
         throw
     }
 }
-function Get-LotImage {
+
+function Get-LotImages {
     <#
     .SYNOPSIS
         Retrieves images for specified lot numbers with intelligent selection
@@ -325,13 +327,13 @@ function Get-LotImage {
         [string]$ImageDir,
         [int]$MaxImagesPerLot = 3
     )
-
+    
     $ImageList = @()
-
+    
     foreach ($Lot in $Lots) {
         $LotNumber = $Lot.Lot
         $AllFoundImages = @()
-
+        
         # Priority 1: Primary image (lotnumber.jpg)
         $PrimaryImagePath = Join-Path $ImageDir "$LotNumber.jpg"
         if (Test-Path $PrimaryImagePath) {
@@ -342,7 +344,7 @@ function Get-LotImage {
                 Type = "Primary"
             }
         }
-
+        
         # Priority 2: Numbered images (lotnumber-2.jpg, lotnumber-3.jpg, etc.)
         $NumberedImages = @()
         for ($i = 2; $i -le 30; $i++) {
@@ -356,9 +358,9 @@ function Get-LotImage {
                 }
             }
         }
-
+        
         $AllFoundImages += $NumberedImages | Sort-Object SortOrder
-
+        
         # Priority 3: Lettered variants
         foreach ($letter in @('a','b','c','d','e','f')) {
             $LetterImagePath = Join-Path $ImageDir "$LotNumber-$letter.jpg"
@@ -371,25 +373,25 @@ function Get-LotImage {
                 }
             }
         }
-
+        
         if ($AllFoundImages.Count -gt 0) {
-            $SelectedImages = $AllFoundImages |
-                Sort-Object Priority, SortOrder |
+            $SelectedImages = $AllFoundImages | 
+                Sort-Object Priority, SortOrder | 
                 Select-Object -First $MaxImagesPerLot
-
+            
             $ImagePaths = $SelectedImages | ForEach-Object { $_.Path }
-
-            Write-JTLSLog "Lot $LotNumber`: Found $($AllFoundImages.Count) images, including $($ImagePaths.Count) (max: $MaxImagesPerLot)" -Level "DEBUG"
-
+            
+            Write-Log "Lot $LotNumber`: Found $($AllFoundImages.Count) images, including $($ImagePaths.Count) (max: $MaxImagesPerLot)" -Level "DEBUG"
+            
             $selectedNames = $SelectedImages | ForEach-Object { Split-Path $_.Path -Leaf }
-            Write-JTLSLog "  Selected: $($selectedNames -join ', ')" -Level "DEBUG"
+            Write-Log "  Selected: $($selectedNames -join ', ')" -Level "DEBUG"
 
             if ($AllFoundImages.Count -gt $MaxImagesPerLot) {
-                Write-JTLSLog "Lot $LotNumber has $($AllFoundImages.Count) images, selected: $(($SelectedImages.Type) -join ', ')" -Level "INFO"
+                Write-Log "Lot $LotNumber has $($AllFoundImages.Count) images, selected: $(($SelectedImages.Type) -join ', ')" -Level "INFO"
             }
-
+            
             $script:ProcessingStats.ImagesFound += $ImagePaths.Count
-
+            
             $ImageList += @{
                 LotNumber = $LotNumber
                 Description = $Lot.Description
@@ -400,23 +402,22 @@ function Get-LotImage {
             }
         }
         else {
-            Write-JTLSLog "No images found for Lot $LotNumber" -Level "WARNING"
+            Write-Log "No images found for Lot $LotNumber" -Level "WARNING"
             $script:ProcessingStats.ImagesMissing++
         }
     }
-
+    
     $totalIncluded = ($ImageList.ImageCount | Measure-Object -Sum).Sum
     $totalFound = ($ImageList.TotalFound | Measure-Object -Sum).Sum
-    Write-JTLSLog "Including $totalIncluded of $totalFound total images found" -Level "INFO"
-
+    Write-Log "Including $totalIncluded of $totalFound total images found" -Level "INFO"
+    
     return $ImageList
 }
 #endregion
 
 #region PDF Generation
 function New-LotPDF {
-    [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact='Medium')]
-<#
+    <#
     .SYNOPSIS
         Creates HTML report with multiple lot images per lot
     .NOTES
@@ -432,7 +433,7 @@ function New-LotPDF {
         [string]$OutputPath,
         [string]$AuctionName
     )
-
+    
     try {
         # Calculate total image count correctly
         $totalImageCount = 0
@@ -441,12 +442,12 @@ function New-LotPDF {
                 $totalImageCount += $lot.ImagePaths.Count
             }
         }
-
-        Write-JTLSLog "Generating image report for $($Images.Count) lots with $totalImageCount total images" -Level "INFO"
-
+        
+        Write-Log "Generating image report for $($Images.Count) lots with $totalImageCount total images" -Level "INFO"
+        
         # Use absolute path for report
         $ReportPath = Join-Path (Resolve-Path $OutputPath).Path ("AuctionLots_" + (Get-Date -Format "yyyyMMdd_HHmmss") + ".html")
-
+        
         # Build HTML using array that we'll join - NO PARSING ERRORS!
         $htmlLines = @()
         $htmlLines += '<!DOCTYPE html>'
@@ -533,25 +534,25 @@ function New-LotPDF {
         $htmlLines += "            Total Images: $totalImageCount"
         $htmlLines += '        </div>'
         $htmlLines += '    </div>'
-
+        
         # Add each lot
         foreach ($LotInfo in $Images) {
             $htmlLines += '    <div class="page">'
             $htmlLines += "        <div class=`"lot-number`">Lot #$($LotInfo.LotNumber)</div>"
             $htmlLines += "        <div class=`"description`">$($LotInfo.Description)</div>"
             $htmlLines += '        <div class="image-container">'
-
+            
             if ($LotInfo.ImagePaths) {
                 $imageNum = 1
                 $totalForLot = $LotInfo.ImagePaths.Count
-
+                
                 foreach ($imagePath in $LotInfo.ImagePaths) {
-                    $imageLabel = if ($totalForLot -gt 1) {
-                        "Image $imageNum of $totalForLot"
-                    } else {
-                        "Lot Image"
+                    $imageLabel = if ($totalForLot -gt 1) { 
+                        "Image $imageNum of $totalForLot" 
+                    } else { 
+                        "Lot Image" 
                     }
-
+                    
                     if ($imagePath -and (Test-Path $imagePath)) {
                         try {
                             $imageBytes = [System.IO.File]::ReadAllBytes($imagePath)
@@ -559,15 +560,15 @@ function New-LotPDF {
                             $imageSrc = "data:image/jpeg;base64,$imageBase64"
                         }
                         catch {
-                            Write-JTLSLog "Could not embed image: $imagePath" -Level "WARNING"
+                            Write-Log "Could not embed image: $imagePath" -Level "WARNING"
                             $imageSrc = "file:///$($imagePath -replace '\\','/')"
                         }
-
+                        
                         $htmlLines += '            <div class="image-wrapper">'
                         $htmlLines += "                <img src=`"$imageSrc`" alt=`"Lot $($LotInfo.LotNumber) - $imageLabel`" />"
                         $htmlLines += "                <div class=`"image-label`">$imageLabel</div>"
                         $htmlLines += '            </div>'
-
+                        
                         $imageNum++
                     }
                 }
@@ -579,28 +580,28 @@ function New-LotPDF {
                 $htmlLines += '                </div>'
                 $htmlLines += '            </div>'
             }
-
+            
             $htmlLines += '        </div>'
             $htmlLines += '    </div>'
         }
-
+        
         # Close HTML
         $htmlLines += '</body>'
         $htmlLines += '</html>'
-
+        
         # Join all lines with newlines and write to file
         $html = $htmlLines -join "`n"
         $html | Out-File -FilePath $ReportPath -Encoding UTF8
-
-        Write-JTLSLog "Image report generated successfully: $ReportPath" -Level "SUCCESS"
+        
+        Write-Log "Image report generated successfully: $ReportPath" -Level "SUCCESS"
         $script:ProcessingStats.PDFsGenerated++
-
+        
         Start-Process $ReportPath
-
+        
         return $ReportPath
     }
     catch {
-        Write-JTLSLog "Failed to generate image report: $_" -Level "ERROR"
+        Write-Log "Failed to generate image report: $_" -Level "ERROR"
         throw
     }
 }
@@ -608,8 +609,7 @@ function New-LotPDF {
 
 #region HTML Email Generation
 function New-LogisticsEmailHTML {
-    [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact='Medium')]
-<#
+    <#
     .SYNOPSIS
         Generates formatted HTML email using config file data when available
     .NOTES
@@ -625,10 +625,10 @@ function New-LogisticsEmailHTML {
         [string]$PDFPath,
         [object]$Config = $null
     )
-
+    
     try {
-        Write-JTLSLog "Generating HTML email for $($LotData.Count) lots" -Level "INFO"
-
+        Write-Log "Generating HTML email for $($LotData.Count) lots" -Level "INFO"
+        
         # Get data from config if available, otherwise use defaults/CSV
         $pickupAddress = if ($Config -and $Config.auction_info.pickup_address) {
             $Config.auction_info.pickup_address
@@ -637,37 +637,37 @@ function New-LogisticsEmailHTML {
         } else {
             "[Pickup address not specified]"
         }
-
+        
         $deliveryAddress = if ($Config -and $Config.delivery_address) {
             $Config.delivery_address
         } else {
             "1218 Lake Avenue, Ashtabula, OH 44004"
         }
-
+        
         $logisticsContactPhone = if ($Config -and $Config.auction_info.logistics_contact.phone) {
             $Config.auction_info.logistics_contact.phone
         } else {
             "[Not available]"
         }
-
+        
         $logisticsContactEmail = if ($Config -and $Config.auction_info.logistics_contact.email) {
             $Config.auction_info.logistics_contact.email
         } else {
             "[Not available]"
         }
-
+        
         $pickupDateTime = if ($Config -and $Config.auction_info.pickup_datetime) {
             $Config.auction_info.pickup_datetime
         } else {
             "[To be determined]"
         }
-
+        
         $deliveryDateTime = if ($Config -and $Config.auction_info.delivery_datetime) {
             $Config.auction_info.delivery_datetime
         } else {
             "[To be determined]"
         }
-
+        
         # Build shipping requirements section
         $shippingReqsLines = @()
         if ($Config -and $Config.shipping_requirements) {
@@ -680,7 +680,7 @@ function New-LogisticsEmailHTML {
             $shippingReqsLines += '    </p>'
         }
         $shippingReqs = $shippingReqsLines -join "`n"
-
+        
         # Build special notes section
         $specialNotesLines = @()
         if ($Config -and $Config.auction_info.special_notes) {
@@ -692,7 +692,7 @@ function New-LogisticsEmailHTML {
             $specialNotesLines += '    </ul>'
         }
         $specialNotes = $specialNotesLines -join "`n"
-
+        
         # Build items list with lot numbers
         $itemsLines = @()
         foreach ($Lot in $LotData) {
@@ -700,7 +700,7 @@ function New-LogisticsEmailHTML {
             $itemsLines += "        <li><strong>Lot #$($Lot.Lot):</strong> $($Lot.Description)$qtyText</li>"
         }
         $ItemsList = $itemsLines -join "`n"
-
+        
         # Build complete HTML using array
         $htmlLines = @()
         $htmlLines += '<!DOCTYPE html>'
@@ -762,44 +762,23 @@ function New-LogisticsEmailHTML {
         $htmlLines += '    (440) 813-6695</p>'
         $htmlLines += '</body>'
         $htmlLines += '</html>'
-
+        
         # Join all lines
         $HTML = $htmlLines -join "`n"
-
-        Write-JTLSLog "HTML email generated successfully" -Level "SUCCESS"
+        
+        Write-Log "HTML email generated successfully" -Level "SUCCESS"
         $script:ProcessingStats.EmailsGenerated++
-
+        
         return $HTML
     }
     catch {
-        Write-JTLSLog "Failed to generate HTML email: $_" -Level "ERROR"
+        Write-Log "Failed to generate HTML email: $_" -Level "ERROR"
         throw
     }
-
-    # -- Auto-generated: PDF output support if -PDFPath is provided --
-    if ($PDFPath) {
-        try {
-            $pdfFolder = [System.IO.Path]::GetDirectoryName($PDFPath)
-            if ($pdfFolder -and -not (Test-Path -LiteralPath $pdfFolder)) {
-                New-Item -Path $pdfFolder -ItemType Directory -Force | Out-Null
-            }
-            $converter = Join-Path -Path $PSScriptRoot -ChildPath 'Convert-HTMLtoPDF.ps1'
-            if (Test-Path -LiteralPath $converter) {
-                & $converter -InputHtml $ReportPath -OutputPdf $PDFPath
-                Write-Information "PDF generated at $PDFPath"
-            } else {
-                Write-Information "Convert-HTMLtoPDF.ps1 not found. Skipping PDF generation."
-            }
-        } catch {
-            Write-Information "Failed to generate PDF: $($_.Exception.Message)"
-        }
-    }
-
 }
 
 function New-OutlookDraftEmail {
-    [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact='Medium')]
-<#
+    <#
     .SYNOPSIS
         Creates a draft email in Outlook with HTML formatting
     .NOTES
@@ -807,7 +786,7 @@ function New-OutlookDraftEmail {
         Company: Azure Innovators
         Create Date: 01/07/2025
         Version: 1.0.0
-        Change Date:
+        Change Date: 
         Change Purpose:
     #>
     param (
@@ -817,51 +796,51 @@ function New-OutlookDraftEmail {
         [string]$To = "",
         [switch]$Display
     )
-
+    
     try {
-        Write-JTLSLog "Creating Outlook draft email" -Level "INFO"
-
+        Write-Log "Creating Outlook draft email" -Level "INFO"
+        
         $Outlook = New-Object -ComObject Outlook.Application
         $Mail = $Outlook.CreateItem(0)
-
+        
         $Mail.Subject = $Subject
         $Mail.HTMLBody = $HTMLContent
-
+        
         if ($To) {
             $Mail.To = $To
         }
-
+        
         # Add attachments with absolute paths
         foreach ($Attachment in $Attachments) {
             if (Test-Path $Attachment) {
                 # Convert to absolute path if relative
                 $AbsolutePath = (Resolve-Path $Attachment).Path
                 $Mail.Attachments.Add($AbsolutePath) | Out-Null
-                Write-JTLSLog "Added attachment: $(Split-Path $AbsolutePath -Leaf)" -Level "DEBUG"
+                Write-Log "Added attachment: $(Split-Path $AbsolutePath -Leaf)" -Level "DEBUG"
             }
             else {
-                Write-JTLSLog "Attachment not found: $Attachment" -Level "WARNING"
+                Write-Log "Attachment not found: $Attachment" -Level "WARNING"
             }
         }
-
+        
         $Mail.Save()
-
+        
         if ($Display) {
             $Mail.Display()
         }
-
-        Write-JTLSLog "Outlook draft email created successfully" -Level "SUCCESS"
-
+        
+        Write-Log "Outlook draft email created successfully" -Level "SUCCESS"
+        
         [System.Runtime.InteropServices.Marshal]::ReleaseComObject($Mail) | Out-Null
         [System.Runtime.InteropServices.Marshal]::ReleaseComObject($Outlook) | Out-Null
         [System.GC]::Collect()
         [System.GC]::WaitForPendingFinalizers()
-
+        
         return $true
     }
     catch {
-        Write-JTLSLog "Failed to create Outlook email: $_" -Level "ERROR"
-        Write-JTLSLog "Make sure Outlook is installed and configured" -Level "WARNING"
+        Write-Log "Failed to create Outlook email: $_" -Level "ERROR"
+        Write-Log "Make sure Outlook is installed and configured" -Level "WARNING"
         return $false
     }
 }
@@ -872,88 +851,88 @@ function Show-Dashboard {
     param (
         [hashtable]$Stats
     )
-
-    Write-Information "`nPress Enter to view dashboard..."
+    
+    Write-Host "`nPress Enter to view dashboard..." -ForegroundColor Yellow
     Read-Host
-
+    
     $EndTime = Get-Date
     $Duration = $EndTime - $Stats.StartTime
-
+    
     Clear-Host
-    Write-Information ""
-    Write-Information "╔════════════════════════════════════════════════════════════╗"
-    Write-Information "║         LOGISTICS EMAIL AUTOMATION DASHBOARD              ║"
-    Write-Information "╠════════════════════════════════════════════════════════════╣"
-    Write-Information "║                                                            ║"
-
-    Write-Information "║  📊 PROCESSING SUMMARY                                    ║"
-    Write-Information "║  ─────────────────────────────────────────────────────    ║"
-    Write-Information "║  Total Lots Processed: $($Stats.TotalLots.ToString().PadLeft(10))                          ║"
-    Write-Information "║  Images Found:         $($Stats.ImagesFound.ToString().PadLeft(10))                          ║"
-    Write-Information "║  Images Missing:       $($Stats.ImagesMissing.ToString().PadLeft(10))                          ║"-gt 0) { "Yellow" } else { "White" })
-    Write-Information "║  PDFs Generated:       $($Stats.PDFsGenerated.ToString().PadLeft(10))                          ║"
-    Write-Information "║  Emails Generated:     $($Stats.EmailsGenerated.ToString().PadLeft(10))                          ║"
-    Write-Information "║                                                            ║"
-
-    Write-Information "║  ⏱️  PERFORMANCE METRICS                                   ║"
-    Write-Information "║  ─────────────────────────────────────────────────────    ║"
-    Write-Information "║  Processing Time:      $($Duration.ToString('mm\:ss').PadLeft(10))                          ║"
-    Write-Information "║  Start Time:           $(($Stats.StartTime.ToString('HH:mm:ss')).PadLeft(10))                          ║"
-    Write-Information "║  End Time:             $(($EndTime.ToString('HH:mm:ss')).PadLeft(10))                          ║"
-    Write-Information "║                                                            ║"
-
+    Write-Host ""
+    Write-Host "╔════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+    Write-Host "║         LOGISTICS EMAIL AUTOMATION DASHBOARD              ║" -ForegroundColor Cyan
+    Write-Host "╠════════════════════════════════════════════════════════════╣" -ForegroundColor Cyan
+    Write-Host "║                                                            ║" -ForegroundColor Cyan
+    
+    Write-Host "║  📊 PROCESSING SUMMARY                                    ║" -ForegroundColor Yellow
+    Write-Host "║  ─────────────────────────────────────────────────────    ║" -ForegroundColor Gray
+    Write-Host "║  Total Lots Processed: $($Stats.TotalLots.ToString().PadLeft(10))                          ║" -ForegroundColor White
+    Write-Host "║  Images Found:         $($Stats.ImagesFound.ToString().PadLeft(10))                          ║" -ForegroundColor Green
+    Write-Host "║  Images Missing:       $($Stats.ImagesMissing.ToString().PadLeft(10))                          ║" -ForegroundColor $(if ($Stats.ImagesMissing -gt 0) { "Yellow" } else { "White" })
+    Write-Host "║  PDFs Generated:       $($Stats.PDFsGenerated.ToString().PadLeft(10))                          ║" -ForegroundColor Green
+    Write-Host "║  Emails Generated:     $($Stats.EmailsGenerated.ToString().PadLeft(10))                          ║" -ForegroundColor Green
+    Write-Host "║                                                            ║" -ForegroundColor Cyan
+    
+    Write-Host "║  ⏱️  PERFORMANCE METRICS                                   ║" -ForegroundColor Yellow
+    Write-Host "║  ─────────────────────────────────────────────────────    ║" -ForegroundColor Gray
+    Write-Host "║  Processing Time:      $($Duration.ToString('mm\:ss').PadLeft(10))                          ║" -ForegroundColor White
+    Write-Host "║  Start Time:           $(($Stats.StartTime.ToString('HH:mm:ss')).PadLeft(10))                          ║" -ForegroundColor White
+    Write-Host "║  End Time:             $(($EndTime.ToString('HH:mm:ss')).PadLeft(10))                          ║" -ForegroundColor White
+    Write-Host "║                                                            ║" -ForegroundColor Cyan
+    
     $LotsWithImages = if ($Stats.TotalLots -gt 0 -and $Stats.ImagesMissing -ge 0) {
         $Stats.TotalLots - $Stats.ImagesMissing
     } else { $Stats.TotalLots }
-
-    $SuccessRate = if ($Stats.TotalLots -gt 0) {
-        [math]::Round(($LotsWithImages / $Stats.TotalLots) * 100, 2)
+    
+    $SuccessRate = if ($Stats.TotalLots -gt 0) { 
+        [math]::Round(($LotsWithImages / $Stats.TotalLots) * 100, 2) 
     } else { 0 }
-
+    
     $SuccessRate = [math]::Min($SuccessRate, 100)
-
-    Write-Information "║  📈 LOT IMAGE COVERAGE                                     ║"
-    Write-Information "║  ─────────────────────────────────────────────────────    ║"
-
+    
+    Write-Host "║  📈 LOT IMAGE COVERAGE                                     ║" -ForegroundColor Yellow
+    Write-Host "║  ─────────────────────────────────────────────────────    ║" -ForegroundColor Gray
+    
     $BarLength = 40
     $FilledLength = [math]::Floor($SuccessRate / 100 * $BarLength)
     $FilledLength = [math]::Max(0, [math]::Min($FilledLength, $BarLength))
     $EmptyLength = $BarLength - $FilledLength
     $Bar = "█" * $FilledLength + "░" * $EmptyLength
-
-    Write-Information "║  [$Bar] $($SuccessRate.ToString('F2'))%  ║"-ge 80) { "Green" } elseif ($SuccessRate -ge 50) { "Yellow" } else { "Red" })
-    Write-Information "║  Lots with images: $LotsWithImages of $($Stats.TotalLots)                             ║"
-
+    
+    Write-Host "║  [$Bar] $($SuccessRate.ToString('F2'))%  ║" -ForegroundColor $(if ($SuccessRate -ge 80) { "Green" } elseif ($SuccessRate -ge 50) { "Yellow" } else { "Red" })
+    Write-Host "║  Lots with images: $LotsWithImages of $($Stats.TotalLots)                             ║" -ForegroundColor White
+    
     if ($Stats.ImagesFound -gt $Stats.TotalLots) {
         $avgImages = [math]::Round($Stats.ImagesFound / $LotsWithImages, 1)
-        Write-Information "║  Average images per lot: $($avgImages.ToString('F1'))                             ║"
+        Write-Host "║  Average images per lot: $($avgImages.ToString('F1'))                             ║" -ForegroundColor White
     }
-
-    Write-Information "║                                                            ║"
-
-    Write-Information "║  📁 DATA SOURCES                                           ║"
-    Write-Information "║  ─────────────────────────────────────────────────────    ║"
+    
+    Write-Host "║                                                            ║" -ForegroundColor Cyan
+    
+    Write-Host "║  📁 DATA SOURCES                                           ║" -ForegroundColor Yellow
+    Write-Host "║  ─────────────────────────────────────────────────────    ║" -ForegroundColor Gray
     foreach ($Source in $Stats.DataSources) {
         $SourceName = Split-Path $Source -Leaf
         if ($SourceName.Length -gt 50) {
             $SourceName = $SourceName.Substring(0, 47) + "..."
         }
-        Write-Information "║  • $($SourceName.PadRight(54))  ║"
+        Write-Host "║  • $($SourceName.PadRight(54))  ║" -ForegroundColor White
     }
-
-    Write-Information "║                                                            ║"
-    Write-Information "╚════════════════════════════════════════════════════════════╝"
-    Write-Information ""
-
+    
+    Write-Host "║                                                            ║" -ForegroundColor Cyan
+    Write-Host "╚════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+    Write-Host ""
+    
     if ($Stats.ImagesMissing -gt 0) {
-        Write-Information "⚠️  WARNING: $($Stats.ImagesMissing) lots are missing images!"
-        Write-Information "   Check the image directory for missing .jpg files"
-        Write-Information ""
+        Write-Host "⚠️  WARNING: $($Stats.ImagesMissing) lots are missing images!" -ForegroundColor Yellow
+        Write-Host "   Check the image directory for missing .jpg files" -ForegroundColor Gray
+        Write-Host ""
     }
-
-    Write-Information "✅ Processing Complete!"
-    Write-Information "   Logs saved to: $script:LogFile"
-    Write-Information ""
+    
+    Write-Host "✅ Processing Complete!" -ForegroundColor Green
+    Write-Host "   Logs saved to: $script:LogFile" -ForegroundColor Gray
+    Write-Host ""
 }
 
 function Export-ProcessingReport {
@@ -965,7 +944,7 @@ function Export-ProcessingReport {
         Company: Azure Innovators
         Create Date: 01/07/2025
         Version: 1.0.0
-        Change Date:
+        Change Date: 
         Change Purpose:
     #>
     param (
@@ -973,9 +952,9 @@ function Export-ProcessingReport {
         [hashtable]$Stats,
         [array]$LotData
     )
-
+    
     $ReportPath = Join-Path $OutputPath ("ProcessingReport_" + (Get-Date -Format "yyyyMMdd_HHmmss") + ".html")
-
+    
     $ReportHTML = @"
 <!DOCTYPE html>
 <html>
@@ -1002,7 +981,7 @@ function Export-ProcessingReport {
         <p><strong>PDFs Generated:</strong> $($Stats.PDFsGenerated)</p>
         <p><strong>Emails Generated:</strong> $($Stats.EmailsGenerated)</p>
     </div>
-
+    
     <h2>Lot Details</h2>
     <table>
         <tr>
@@ -1012,14 +991,14 @@ function Export-ProcessingReport {
             <th>Image Status</th>
         </tr>
 "@
-
+    
     foreach ($Lot in $LotData) {
-        $ImageStatus = if (Test-Path (Join-Path $ImageDirectory "$($Lot.Lot).jpg")) {
-            "✅ Found"
-        } else {
-            "❌ Missing"
+        $ImageStatus = if (Test-Path (Join-Path $ImageDirectory "$($Lot.Lot).jpg")) { 
+            "✅ Found" 
+        } else { 
+            "❌ Missing" 
         }
-
+        
         $ReportHTML += @"
         <tr>
             <td>$($Lot.Lot)</td>
@@ -1029,16 +1008,16 @@ function Export-ProcessingReport {
         </tr>
 "@
     }
-
+    
     $ReportHTML += @"
     </table>
 </body>
 </html>
 "@
-
+    
     $ReportHTML | Out-File -FilePath $ReportPath -Encoding UTF8
-    Write-JTLSLog "Processing report exported to: $ReportPath" -Level "SUCCESS"
-
+    Write-Log "Processing report exported to: $ReportPath" -Level "SUCCESS"
+    
     return $ReportPath
 }
 #endregion
@@ -1049,127 +1028,127 @@ try {
     if ($ConfigPath -and (Test-Path $ConfigPath)) {
         $configDir = Split-Path $ConfigPath -Parent
         $LogDirectory = Join-Path $configDir "Logs"
-
+        
         # Also set Output directory to be with the config if not explicitly specified
         if ($PSBoundParameters.ContainsKey('OutputDirectory') -eq $false) {
             $OutputDirectory = Join-Path $configDir "Output"
         }
-
-        Write-Information "Using directories based on config location:"
-        Write-Information "  Logs: $LogDirectory"
-        Write-Information "  Output: $OutputDirectory"
+        
+        Write-Host "Using directories based on config location:" -ForegroundColor Cyan
+        Write-Host "  Logs: $LogDirectory" -ForegroundColor Gray
+        Write-Host "  Output: $OutputDirectory" -ForegroundColor Gray
     }
-
+    
     Initialize-Logging -LogDir $LogDirectory
-
+    
     if (!(Test-Path $OutputDirectory)) {
         New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
-        Write-JTLSLog "Created output directory: $OutputDirectory" -Level "INFO"
+        Write-Log "Created output directory: $OutputDirectory" -Level "INFO"
     }
-
+    
     # Load configuration if provided
     $config = $null
     if ($ConfigPath) {
         $config = Get-AuctionConfig -ConfigPath $ConfigPath
         if ($config) {
-            Write-JTLSLog "Using configuration from: $ConfigPath" -Level "SUCCESS"
+            Write-Log "Using configuration from: $ConfigPath" -Level "SUCCESS"
         }
     }
-
+    
     # Import auction data
-    Write-JTLSLog "Starting data import process" -Level "INFO"
+    Write-Log "Starting data import process" -Level "INFO"
     $AuctionData = Import-AuctionData -CSVPath $CSVPath
-
+    
     # Process lot images
-    Write-JTLSLog "Processing lot images (max $MaxImagesPerLot per lot)" -Level "INFO"
-    $LotImages = Get-LotImage -Lots $AuctionData -ImageDir $ImageDirectory -MaxImagesPerLot $MaxImagesPerLot
+    Write-Log "Processing lot images (max $MaxImagesPerLot per lot)" -Level "INFO"
+    $LotImages = Get-LotImages -Lots $AuctionData -ImageDir $ImageDirectory -MaxImagesPerLot $MaxImagesPerLot
 
     # Generate image report and convert to PDF
     $PDFFilePath = $null
     $ImageReportPath = $null
 
     if ($LotImages.Count -gt 0) {
-        Write-JTLSLog "Generating HTML image report" -Level "INFO"
+        Write-Log "Generating HTML image report" -Level "INFO"
         $ImageReportPath = New-LotPDF -Images $LotImages -OutputPath $OutputDirectory -AuctionName "Auction"
-
+        
         # Try automatic PDF conversion using helper script
         if ($script:PDFHelperAvailable) {
-            Write-JTLSLog "Attempting automatic PDF conversion..." -Level "INFO"
-
+            Write-Log "Attempting automatic PDF conversion..." -Level "INFO"
+            
             $PDFPath = Join-Path $OutputDirectory ("AuctionLots_" + (Get-Date -Format "yyyyMMdd_HHmmss") + ".pdf")
-
-            Write-Information "`n╔════════════════════════════════════════════════════════════╗"
-            Write-Information "║         PDF CONVERSION - DETAILED OUTPUT                  ║"
-            Write-Information "╚════════════════════════════════════════════════════════════╝`n"
-
+            
+            Write-Host "`n╔════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+            Write-Host "║         PDF CONVERSION - DETAILED OUTPUT                  ║" -ForegroundColor Cyan
+            Write-Host "╚════════════════════════════════════════════════════════════╝`n" -ForegroundColor Cyan
+            
             try {
                 # Don't use -Quiet so we can see all debugging output
                 $PDFFilePath = ConvertTo-PDFHelper -HTMLPath $ImageReportPath -OutputPath $PDFPath -Method "Auto"
-
+                
                 if ($PDFFilePath -and (Test-Path $PDFFilePath)) {
-                    Write-JTLSLog "PDF created successfully: $(Split-Path $PDFFilePath -Leaf)" -Level "SUCCESS"
-                    Write-Information "`n✓ PDF saved to: $PDFFilePath"
-
+                    Write-Log "PDF created successfully: $(Split-Path $PDFFilePath -Leaf)" -Level "SUCCESS"
+                    Write-Host "`n✓ PDF saved to: $PDFFilePath" -ForegroundColor Green
+                    
                     # Open the folder containing the PDF
                     $pdfFolder = Split-Path $PDFFilePath -Parent
                     Start-Process explorer.exe -ArgumentList "/select,`"$PDFFilePath`""
                 }
                 else {
-                    Write-JTLSLog "Automatic PDF conversion failed, using HTML report" -Level "WARNING"
-                    Write-Information "`n⚠️  PDF conversion did not produce a file"
-                    Write-Information "   Using HTML report instead: $ImageReportPath"
+                    Write-Log "Automatic PDF conversion failed, using HTML report" -Level "WARNING"
+                    Write-Host "`n⚠️  PDF conversion did not produce a file" -ForegroundColor Yellow
+                    Write-Host "   Using HTML report instead: $ImageReportPath" -ForegroundColor Gray
                     $PDFFilePath = $ImageReportPath
                 }
             }
             catch {
-                Write-JTLSLog "Error during PDF conversion: $_" -Level "ERROR"
-                Write-JTLSLog "Falling back to HTML report" -Level "WARNING"
-                Write-Information "`n✗ Error: $_"
+                Write-Log "Error during PDF conversion: $_" -Level "ERROR"
+                Write-Log "Falling back to HTML report" -Level "WARNING"
+                Write-Host "`n✗ Error: $_" -ForegroundColor Red
                 $PDFFilePath = $ImageReportPath
             }
         }
         else {
-            Write-JTLSLog "PDF helper not available, using HTML report" -Level "WARNING"
-            Write-Information "`n" + ("=" * 70)
-            Write-Information "MANUAL PDF CREATION:"
-            Write-Information ("=" * 70)
-            Write-Information "1. HTML report opened in your browser"
-            Write-Information "2. Press Ctrl+P to print"
-            Write-Information "3. Select 'Save as PDF' or your Foxit PDF Printer"
-            Write-Information "4. Save to Output folder"
-            Write-Information ("=" * 70) + "`n"
+            Write-Log "PDF helper not available, using HTML report" -Level "WARNING"
+            Write-Host "`n" + ("=" * 70) -ForegroundColor Yellow
+            Write-Host "MANUAL PDF CREATION:" -ForegroundColor Yellow
+            Write-Host ("=" * 70) -ForegroundColor Yellow
+            Write-Host "1. HTML report opened in your browser" -ForegroundColor White
+            Write-Host "2. Press Ctrl+P to print" -ForegroundColor White
+            Write-Host "3. Select 'Save as PDF' or your Foxit PDF Printer" -ForegroundColor White
+            Write-Host "4. Save to Output folder" -ForegroundColor White
+            Write-Host ("=" * 70) + "`n" -ForegroundColor Yellow
             $PDFFilePath = $ImageReportPath
         }
     }
     else {
-        Write-JTLSLog "No images found, skipping PDF generation" -Level "WARNING"
+        Write-Log "No images found, skipping PDF generation" -Level "WARNING"
     }
-
+    
     # Generate HTML email using config data
-    Write-JTLSLog "Generating HTML email with config data" -Level "INFO"
+    Write-Log "Generating HTML email with config data" -Level "INFO"
     $EmailHTML = New-LogisticsEmailHTML -LotData $AuctionData -PDFPath $PDFFilePath -Config $config
-
+    
     # Determine email subject
     $emailSubject = if ($config -and $config.email_subject) {
         $config.email_subject
     } else {
         "Freight Quote Request - $(Get-Date -Format 'yyyy-MM-dd')"
     }
-
+    
     # Save HTML to file with absolute path
     $OutputDirAbsolute = if (Test-Path $OutputDirectory) {
         (Resolve-Path $OutputDirectory).Path
     } else {
         (New-Item -ItemType Directory -Path $OutputDirectory -Force).FullName
     }
-
+    
     $HTMLFilePath = Join-Path $OutputDirAbsolute ("LogisticsEmail_" + (Get-Date -Format "yyyyMMdd_HHmmss") + ".html")
     $EmailHTML | Out-File -FilePath $HTMLFilePath -Encoding UTF8
-    Write-JTLSLog "HTML email saved to: $HTMLFilePath" -Level "SUCCESS"
-    Write-Information "`n================================================"
-    Write-Information "EMAIL FILE LOCATION:"
-    Write-Information $HTMLFilePath
-    Write-Information "================================================`n"
+    Write-Log "HTML email saved to: $HTMLFilePath" -Level "SUCCESS"
+    Write-Host "`n================================================" -ForegroundColor Cyan
+    Write-Host "EMAIL FILE LOCATION:" -ForegroundColor Yellow
+    Write-Host $HTMLFilePath -ForegroundColor Green
+    Write-Host "================================================`n" -ForegroundColor Cyan
 
     # Prepare attachments
     $AttachmentList = @()
@@ -1183,11 +1162,11 @@ try {
     }
     else {
         $OutlookCreated = $false
-        Write-JTLSLog "Outlook draft creation skipped (use -CreateOutlookDraft to enable)" -Level "INFO"
+        Write-Log "Outlook draft creation skipped (use -CreateOutlookDraft to enable)" -Level "INFO"
     }
 
     if (-not $OutlookCreated) {
-        Write-JTLSLog "Opening HTML in default browser" -Level "INFO"
+        Write-Log "Opening HTML in default browser" -Level "INFO"
         Start-Process $HTMLFilePath
     }
 
@@ -1197,18 +1176,18 @@ try {
         $ReportPath = Export-ProcessingReport -OutputPath $OutputDirectory -Stats $script:ProcessingStats -LotData $AuctionData
     }
     catch {
-        Write-JTLSLog "Skipping processing report: $($_.Exception.Message)" -Level "WARNING"
+        Write-Log "Skipping processing report: $($_.Exception.Message)" -Level "WARNING"
     }
-
+    
     $script:ProcessingStats.ProcessedLots = $AuctionData.Count
-
+    
     if ($ShowDashboard) {
         Show-Dashboard -Stats $script:ProcessingStats
     }
-
-    Write-JTLSLog "=== Logistics Email Automation Completed Successfully ===" -Level "SUCCESS"
-    Write-JTLSLog "Output files saved to: $OutputDirectory" -Level "INFO"
-
+    
+    Write-Log "=== Logistics Email Automation Completed Successfully ===" -Level "SUCCESS"
+    Write-Log "Output files saved to: $OutputDirectory" -Level "INFO"
+    
     # Return summary object
     [PSCustomObject]@{
         Success = $true
@@ -1220,23 +1199,20 @@ try {
     }
 }
 catch {
-    Write-JTLSLog "Fatal error: $_" -Level "ERROR"
-    Write-JTLSLog "Stack Trace: $($_.ScriptStackTrace)" -Level "ERROR"
-
+    Write-Log "Fatal error: $_" -Level "ERROR"
+    Write-Log "Stack Trace: $($_.ScriptStackTrace)" -Level "ERROR"
+    
     [PSCustomObject]@{
         Success = $false
         Error = $_.Exception.Message
         LogFile = $script:LogFile
         ErrorLogFile = $script:ErrorLogFile
     }
-
+    
     throw
 }
 finally {
-    Write-JTLSLog "Script execution completed" -Level "INFO"
-    Write-JTLSLog "Total execution time: $((Get-Date) - $script:ProcessingStats.StartTime)" -Level "INFO"
+    Write-Log "Script execution completed" -Level "INFO"
+    Write-Log "Total execution time: $((Get-Date) - $script:ProcessingStats.StartTime)" -Level "INFO"
 }
 #endregion
-
-
-
