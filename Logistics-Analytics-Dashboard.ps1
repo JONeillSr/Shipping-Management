@@ -698,8 +698,8 @@ function New-AnalyticsDashboard {
         $insights = Get-CostOptimizationInsights
         
         # Update overview cards
-        $lblTotalSpent.Text = "`$$($trends.TotalSpent.ToString('N2'))"
-        $lblAvgCost.Text = "`$$($trends.AverageCost.ToString('N2'))"
+        $lblTotalSpent.Text = "$($trends.TotalSpent.ToString('C2'))"
+        $lblAvgCost.Text = "$($trends.AverageCost.ToString('C2'))"
         
         $shipmentsWithCost = ($script:Auctions | Where-Object { 
             $_.SelectedQuote -and $_.SelectedQuote.Amount 
@@ -722,19 +722,20 @@ function New-AnalyticsDashboard {
         # Update carrier grid
         $dgvCarriers.Rows.Clear()
         foreach ($carrier in $carrierMetrics) {
+            $respTimeDisplay = if ($carrier.AverageResponseTime -gt 0) {
+                "$($carrier.AverageResponseTime) hrs"
+            } else {
+                'N/A'
+            }
+
             $row = @(
                 $carrier.CompanyName,
                 $carrier.TotalQuotes,
                 $carrier.TimesSelected,
                 "$($carrier.WinRate)%",
-                "`$$($carrier.AverageQuote.ToString('N2'))",
-                if ($carrier.AverageResponseTime -gt 0) { 
-                    "$($carrier.AverageResponseTime) hrs" 
-                } else { 
-                    "N/A" 
-                }
+                "$($carrier.AverageQuote.ToString('C2'))",
+                $respTimeDisplay
             )
-            $dgvCarriers.Rows.Add($row) | Out-Null
         }
         
         # Update insights

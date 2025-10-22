@@ -1,85 +1,62 @@
 <#
 .SYNOPSIS
-    Generic PDF Invoice Parser for Multiple Auction Houses
+    Generic PDF Invoice Parser for multiple auction formats (Brolyn, Ritchie Bros, Stronghold Equipment, etc.).
 
 .DESCRIPTION
-    Advanced PDF parsing with support for multiple auction house formats, pattern learning,
-    and intelligent data extraction. Works with Brolyn, Ritchie Bros, Purple Wave, GovDeals,
-    and other auction platforms.
-
-    Key features:
-      - Multiple PDF extraction strategies with graceful fallback.
-      - Pattern detection for vendor, contacts, pickup info, and items.
-      - Robust totals logic:
-          * Windowed label extraction to avoid cross-column drift.
-          * Relationship rules: Cash = Subtotal; Credit = Subtotal + Convenience Fee (if present).
-      - Strict mode to prevent silent misreads:
-          * -StrictTotals throws if requested total is ambiguous or conflicts with relationships.
-      - Optional runtime prompt to choose cash/credit.
-      - -ReturnObject to return the parsed object (for GUI/scripts) without console noise.
-      - Structured pickup addresses with Address2 (parenthetical moved from street) and multiline output.
+    Extracts structured invoice data (vendor, buyer, items/lots, totals, fees, pickup info) from PDF invoices.
+    Optimized for messy text extraction and inconsistent layouts. Includes a vendor-specific, stateful parser for
+    Stronghold Equipment that pairs LOT → DESCRIPTION → HAMMER PRICE reliably even when lines wrap or prices
+    appear detached (e.g., "$ 1,234.56" or "1,234.56$" on the next line).
 
 .PARAMETER PDFPath
-    Path to the PDF (or .txt extracted text) invoice to parse.
-
-.PARAMETER OutputFormat
-    Output format: JSON, CSV, Display, or Config (default: Display)
-      - Display : prints a human-readable summary to the console
-      - JSON    : writes the parsed result to InvoiceData_YYYYMMDD_HHMMSS.json
-      - Config  : writes a logistics-oriented JSON for freight quotes (multiline pickup address)
-      - CSV     : (reserved for future use)
+    Path to the invoice PDF.
 
 .PARAMETER ReturnObject
-    Return the parsed data as a PowerShell object instead of displaying/exporting.
-
-.PARAMETER SavePattern
-    Reserved for future pattern learning. (No-op today; referenced to satisfy analyzer.)
-
-.PARAMETER DebugMode
-    Enable debug output and save extracted text + parsed JSON to files in the current directory.
-
-.PARAMETER GUI
-    Launch a graphical UI (not yet implemented).
+    When set, returns a single PowerShell object with structured fields instead of writing console output.
+    Intended for wrapper scripts (e.g., Invoice-ToPurchaseTrackingCSV.ps1) that generate CSVs.
 
 .PARAMETER PaymentMethod
-    Which total to report when both are present: Cash or Credit (default: Cash).
+    Optional. 'Cash' or 'Credit'. Affects totals validation for layouts that show both "Cash Total Due" and
+    "Credit Total Due". Defaults to 'Cash' unless the invoice clearly indicates otherwise.
 
 .PARAMETER PromptPayment
-    Prompt at runtime to choose Cash or Credit.
+    Optional switch. If present and the invoice indicates a prompt/early payment discount, the totals logic
+    can factor that in when validating relationships.
 
 .PARAMETER StrictTotals
-    Fail if the requested total cannot be determined with high confidence.
+    Optional switch. Enables strict cross-checks between Subtotal, Convenience Fee, and Grand/Cash/Credit totals.
+    When enabled, the script throws if relationships are inconsistent rather than tolerating minor drift.
+
+.OUTPUTS
+    [pscustomobject]
+    {
+        Vendor, InvoiceNumber, InvoiceDate,
+        Buyer: { Name, Address, Phone, Email },
+        PickupAddresses: [ { Street, Address2, City, State, Zip, OneLine } ... ],
+        PickupDates:     [ ... ],
+        Items:           [ { LotNumber, Description, HammerPrice } ... ],
+        Totals:          { Subtotal, ConvenienceFee, GrandTotal, CashTotal, CreditTotal }
+    }
 
 .EXAMPLE
-    .\Generic-PDF-Invoice-Parser.ps1 -PDFPath ".\invoice.pdf"
+    .\Generic-PDF-Invoice-Parser.ps1 -PDFPath .\SE Invoice-101625-5024.pdf
 
 .EXAMPLE
-    .\Generic-PDF-Invoice-Parser.ps1 -PDFPath ".\invoice.pdf" -ReturnObject
+    # Return a structured object for a wrapper script to convert to CSV
+    $data = .\Generic-PDF-Invoice-Parser.ps1 -PDFPath .\SE Invoice-101625-5024.pdf -ReturnObject
 
 .EXAMPLE
-    .\Generic-PDF-Invoice-Parser.ps1 -PDFPath ".\invoice.pdf" -PaymentMethod Credit
-
-.EXAMPLE
-    .\Generic-PDF-Invoice-Parser.ps1 -PDFPath ".\invoice.pdf" -PromptPayment
-
-.EXAMPLE
-    .\Generic-PDF-Invoice-Parser.ps1 -PDFPath ".\invoice.pdf" -StrictTotals
+    # Strict totals validation assuming a credit-card checkout
+    .\Generic-PDF-Invoice-Parser.ps1 -PDFPath .\invoice.pdf -PaymentMethod Credit -StrictTotals
 
 .NOTES
-    Author: John O'Neill Sr.
-    Company: Azure Innovators
-    Create Date: 2025-01-08
-    Version: 1.6.2
-    Change Date: 2025-10-09
-    Change Purpose:
-      - FIX: Removed invalid '??' operator (PowerShell), replaced with PS-native conditional
-      - FIX: Ensured loop variables are referenced; cleaned minor analyzer nits
-      - Kept Address2 extraction and multiline output/config
+    Version: v1.8.1
+    Changes:
+      - Stronghold: extraction rewritten as a small state machine to avoid lot/price misalignment and
+        handle detached dollar signs, wide whitespace, and orphaned lot lines.
+      - Keeps previous behavior for other vendors.
+      - ReturnObject flow is unchanged and compatible with existing CSV wrappers.
 
-.CHANGELOG
-    v1.6.2: PS parser fix (no '??'); analyzer cleanups
-    v1.6.1: HashSet dedupe; analyzer cleanups
-    v1.6.0: Address2 support (from parentheses), structured pickup addresses, multiline output/config
 #>
 
 [CmdletBinding()]
@@ -113,6 +90,9 @@ param (
     [Parameter(Mandatory=$false)]
     [switch]$StrictTotals
 )
+
+# Prevent ScriptAnalyzer PSReviewUnusedParameter warnings when code paths short-circuit:
+$null = $PaymentMethod; $null = $PromptPayment; $null = $StrictTotals
 
 # Explicit reference to satisfy analyzer (even if feature is a no-op today)
 if ($SavePattern) { $null = $true }
@@ -209,6 +189,7 @@ function Import-InvoicePattern {
                 Email = 'logistics@brolynauctions\.com'
                 Address = '290\s+West\s+750\s+North.*?Howe.*?IN|1139\s+Haines.*?Sturgis.*?MI'
                 PickupDates = '(?:load times|pickup).*?(\w+\s+\d{1,2}/\d{1,2})\s+thru\s+(\w+\s+\d{1,2}/\d{1,2})'
+                LotPattern = '^(\d{2,5})\s+\d{4}\s+(.+)'
             }
         }
 
@@ -220,8 +201,21 @@ function Import-InvoicePattern {
                 Email = '[a-zA-Z0-9._%+-]+@rbauction\.com|[a-zA-Z0-9._%+-]+@ritchiebros\.com'
                 Address = '\d+.*?(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd).*?[A-Z]{2}\s+\d{5}'
                 PickupDates = '(?:Removal|Pickup).*?(\d{1,2}/\d{1,2}/\d{4})'
+                LotPattern = '^(\d{2,5})\s+\d{4}\s+(.+)'
             }
         }
+
+        $script:LearnedPatterns += @{
+            Vendor = "Stronghold Equipment"
+            Patterns = @{
+                CompanyIdentifier = 'STRONGHOLD EQUIPMENT|Stronghold Equipment|Rocky Recycling Ltd'
+                Phone = '905-662-8200'
+                Email = 'dan@strongholdequipment.com'
+                Address = '349 Arvin Ave'
+                PickupDates = 'Removal|Pickup'
+            }
+        }
+
     }
 
     if ($SavePattern) { $null = $script:LearnedPatterns.Count }
@@ -234,23 +228,41 @@ function Find-InvoiceVendor {
     #>
     param ([Parameter(Mandatory=$true)][string]$Text)
 
-    if (-not $ReturnObject) { Write-Output "`n🔍 Identifying vendor..." }
+    if (-not $ReturnObject) { Write-Output "`n Identifying vendor..." }
 
     $cleanText = $Text -replace '\s+', ' '
 
+    # Check for Stronghold Equipment
+    if ($cleanText -match '(?i)stronghold|STRONGHOLD|Rocky Recycling') {
+        if (-not $ReturnObject) { Write-Output "   Detected: Stronghold Equipment" }
+        return $script:LearnedPatterns | Where-Object { $_.Vendor -eq "Stronghold Equipment" } | Select-Object -First 1
+    }
+
+    # Check for DC Auctions / Wavebid
+    if ($cleanText -match '(?i)\bDC\s*Auctions\b|\bWavebid\b') {
+        if (-not $ReturnObject) { Write-Output "   Detected: DC Auctions (Wavebid)" }
+        return @{
+            Vendor   = "DC Auctions"
+            Patterns = @{
+                CompanyIdentifier = 'DC\s*Auctions|Wavebid'
+            }
+        }
+    }
+
+    # Check for Brolyn
     if ($cleanText -match '(?i)brolyn|BROLYN') {
-        if (-not $ReturnObject) { Write-Output "   ✅ Detected: Brolyn Auctions" }
+        if (-not $ReturnObject) { Write-Output "   Detected: Brolyn Auctions" }
         return $script:LearnedPatterns | Where-Object { $_.Vendor -eq "Brolyn Auctions" } | Select-Object -First 1
     }
 
     foreach ($pattern in $script:LearnedPatterns) {
         if ($cleanText -match $pattern.Patterns.CompanyIdentifier) {
-            if (-not $ReturnObject) { Write-Output "   ✅ Detected: $($pattern.Vendor)" }
+            if (-not $ReturnObject) { Write-Output "   Detected: $($pattern.Vendor)" }
             return $pattern
         }
     }
 
-    if (-not $ReturnObject) { Write-Output "   ⚠️  Unknown vendor - using generic patterns" }
+    if (-not $ReturnObject) { Write-Output "   Unknown vendor - using generic patterns" }
     return @{
         Vendor = "Unknown"
         Patterns = @{
@@ -259,6 +271,7 @@ function Find-InvoiceVendor {
             Email = '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
             Address = '\d+\s+[A-Za-z\s]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln)[,\s]+[A-Za-z\s]+[,\s]+[A-Z]{2}\s+\d{5}'
             PickupDates = '(\d{1,2}/\d{1,2}/\d{4})'
+            LotPattern = '^(\d{2,5})\s+\d{4}\s+(.+)'
         }
     }
 }
@@ -397,6 +410,7 @@ function Get-InvoiceData {
         Extracts structured data from invoice text with enhanced pattern matching
     .DESCRIPTION
         Parses vendor, contacts, pickup info (structured), items, and totals.
+        Supports vendor-specific item extraction including Hammer Price for Stronghold.
         Totals logic:
           - Windowed character search after labels (prevents column drift).
           - Relationship rules: Cash = Subtotal; Credit = Subtotal + Convenience Fee.
@@ -418,7 +432,7 @@ function Get-InvoiceData {
 
     function Fmt2($n){ if ($null -ne $n) { ('{0:N2}' -f [decimal]$n) } else { '' } }
 
-    $data = @{
+    $data = [ordered]@{
         Vendor = $VendorPattern.Vendor
         InvoiceNumber = $null
         InvoiceDate = $null
@@ -432,6 +446,23 @@ function Get-InvoiceData {
         }
         SpecialNotes = @()
     }
+    # Ensure Items holds PSCustomObjects and avoid duplicates across parsing passes
+    if (-not ($data.Items -is [System.Collections.IList])) { $data.Items = @() }
+    $seenKeys = New-Object 'System.Collections.Generic.HashSet[string]'
+
+    function Commit-Item([string]$lot, [string]$desc, [string]$price) {
+        if (-not $lot)   { return }
+        if (-not $price) { return }
+        $k = "$lot|$price"
+        if ($seenKeys.Contains($k)) { return }
+        $null = $seenKeys.Add($k)
+        $data.Items += [pscustomobject]@{
+            LotNumber   = $lot
+            Description = ($desc | ForEach-Object { $_ }) -as [string]
+            HammerPrice = $price
+        }
+    }
+
 
     # Invoice #
     if ($normalizedText -match '(?:Invoice\s*#?\s*:?\s*)?(\d{4}-\d{6}-\d+)') {
@@ -439,6 +470,10 @@ function Get-InvoiceData {
         if (-not $ReturnObject) { Write-Output "   📋 Invoice #: $($data.InvoiceNumber)" }
     }
     elseif ($normalizedText -match 'Invoice\s*#?\s*:?\s*([A-Z0-9-]+)') {
+        $data.InvoiceNumber = $Matches[1]
+        if (-not $ReturnObject) { Write-Output "   📋 Invoice #: $($data.InvoiceNumber)" }
+    }
+    elseif ($normalizedText -match 'BUYER/INVOICE\s+(\d+)') {
         $data.InvoiceNumber = $Matches[1]
         if (-not $ReturnObject) { Write-Output "   📋 Invoice #: $($data.InvoiceNumber)" }
     }
@@ -454,6 +489,10 @@ function Get-InvoiceData {
     }
     elseif ($normalizedText -match '\d{2}-\w{3}-\d{4}\s+\d{2}:\d{2}') {
         $data.InvoiceDate = $Matches[0]
+        if (-not $ReturnObject) { Write-Output "   📅 Date: $($data.InvoiceDate)" }
+    }
+    elseif ($normalizedText -match 'DATE:\s*(\d{1,2}/\d{1,2}/\d{4})') {
+        $data.InvoiceDate = $Matches[1]
         if (-not $ReturnObject) { Write-Output "   📅 Date: $($data.InvoiceDate)" }
     }
 
@@ -490,7 +529,8 @@ function Get-InvoiceData {
     # Generic address hits (convert to structured objects)
     $addressPatterns = @(
         '(\d+\s+(?:West|East|North|South)\s+\d+\s+(?:West|East|North|South)[^\n,]+?(?:Howe|Sturgis)[^\n,]+?(?:IN|MI)\s+\d{5})',
-        '(\d+\s+[A-Za-z]+\s+(?:Blvd|Boulevard|Street|St|Avenue|Ave|Road|Rd|Drive|Dr)[^\n,]+?(?:Howe|Sturgis)[^\n,]+?(?:IN|MI)\s+\d{5})'
+        '(\d+\s+[A-Za-z]+\s+(?:Blvd|Boulevard|Street|St|Avenue|Ave|Road|Rd|Drive|Dr)[^\n,]+?(?:Howe|Sturgis)[^\n,]+?(?:IN|MI)\s+\d{5})',
+        '(\d+\s+[A-Za-z]+\s+(?:Blvd|Boulevard|Street|St|Avenue|Ave|Road|Rd|Drive|Dr)[^\n,]+?(?:Stoney\s+Creek)[^\n,]+?(?:ON)\s+[A-Z0-9]{3}\s+[A-Z0-9]{3})'
     )
     foreach ($pattern in $addressPatterns) {
         $addressMatches = [regex]::Matches($Text, $pattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
@@ -532,34 +572,214 @@ function Get-InvoiceData {
         Write-Output "   📅 Found $($data.PickupDates.Count) pickup date range(s)"
     }
 
-    # Items (lot extraction)
-    $lotLines = $Text -split "`n"
-    $currentLot = $null
-    foreach ($lineRaw in $lotLines) {
-        $line = $lineRaw.Trim()
-        if ($line -match '^(\d{2,5})\s+\d{4}\s+(.+)') {
-            $lotNum = $Matches[1]
-            $desc = $Matches[2].Trim()
-            if ($desc -notmatch '(?i)^(?:Invoice|CR\s+\d+|Location:|Page\s+\d+|Date:)' -and
-                $desc.Length -ge 15 -and $desc.Length -le 500) {
-                $desc = $desc -replace '\s+', ' '
-                $desc = $desc -replace '^\s*-\s*', ''
-                $existingLot = $data.Items | Where-Object { $_.LotNumber -eq $lotNum }
-                if (-not $existingLot) {
-                    $data.Items += @{ LotNumber = $lotNum; Description = $desc }
-                    $currentLot = @{ LotNumber = $lotNum; Description = $desc }
+    # --- DC Auctions / Wavebid parser ---
+if ($VendorPattern.Vendor -eq "DC Auctions") {
+    $lines = ($Text -split "`n") | ForEach-Object { $_.TrimEnd() }
+    $n = $lines.Count
+
+    # Table header + row patterns
+    $headerPattern = '^(?i)Lot\s+Paddle\s+Description\s+Qty\s+Bid\s+Sale\s*Price'
+    $lotFull       = '^(?<lot>\d+[A-Z]?)\b(?:\s+.*)?$'      # new lot begins when a line starts with 113, 434, 449A, etc.
+    $priceLine     = '(\$[ \t]*\d{1,3}(?:,\d{3})*\.\d{2})'  # capture $x,xxx.xx
+    $loadingFeeKW  = '(?i)\bLoading\s*Fee\b'
+
+    function Get-FirstSalePriceFromLine([string]$s) {
+        # prefer lines that look like right-column totals: multiple $ amounts; take the FIRST
+        $mLocal = [regex]::Matches($s, $priceLine)
+        if ($matches.Count -ge 1) {
+            # first $-amount is the Sale Price for Wavebid invoice rows
+            return ($matches[0].Value -replace '[^\d\.]', '') -replace ',', ''
+        }
+        return $null
+    }
+
+    $inTable     = $false
+    $currentLot  = $null
+    $currentDesc = ""
+
+    for ($i=0; $i -lt $n; $i++) {
+        $line = $lines[$i].Trim()
+
+        if (-not $inTable) {
+            if ($line -match $headerPattern) { $inTable = $true; continue }
+            continue
+        }
+
+        # End of items area markers
+        if ($line -match '^(?i)Total\s+Lots:\s*\d+' -or $line -match '^(?i)Totals:') {
+            if ($currentLot) {
+                # Try to flush pending lot using any trailing price we saw in description or next lines
+                $flushed = $false
+                for ($j=$i; $j -lt [Math]::Min($i+4,$n); $j++) {
+                    $pl = $lines[$j]
+                    if ($pl -match $loadingFeeKW) { continue }
+                    $p = Get-FirstSalePriceFromLine $pl
+                    if ($p) {
+                        Commit-Item $currentLot ($currentDesc.Trim()) $p
+                        $flushed = $true; break
+                    }
+                }
+                if (-not $flushed) {
+                    $p = Get-FirstSalePriceFromLine $currentDesc
+                    if ($p) { Commit-Item $currentLot ($currentDesc.Trim()) $p }
+                }
+                $currentLot=$null; $currentDesc=""
+            }
+            break
+        }
+
+        # New lot row begins
+        if ($line -match $lotFull) {
+            # Flush previous pending lot first
+            if ($currentLot) {
+                # look ahead for a price line that is not a loading-fee row
+                $added = $false
+                for ($k=$i; $k -lt [Math]::Min($i+4,$n); $k++) {
+                    $look = $lines[$k]
+                    if ($look -match $loadingFeeKW) { continue }
+                    $p = Get-FirstSalePriceFromLine $look
+                    if ($p) {
+                        Commit-Item $currentLot ($currentDesc.Trim()) $p
+                        $added = $true; break
+                    }
+                }
+                if (-not $added) {
+                    # fallback: try inside the description
+                    $p = Get-FirstSalePriceFromLine $currentDesc
+                    if ($p) { Commit-Item $currentLot ($currentDesc.Trim()) $p }
+                }
+            }
+
+            $currentLot  = $Matches['lot']
+            $currentDesc = ""   # description accumulates from subsequent lines
+            continue
+        }
+
+        # While inside a lot, accumulate description and try to capture Sale Price
+        if ($currentLot) {
+            # Skip pure "Loading Fee" rows from affecting price or description
+            if ($line -match $loadingFeeKW) { continue }
+
+            # If this line has multiple $ amounts (Sale Price / Premium / Tax / Total), take the first as Sale Price
+            $p = Get-FirstSalePriceFromLine $line
+            if ($p) {
+                # Commit the lot immediately when we see the first $ amount line (Sale Price)
+                $descOnly = $currentDesc.Trim()
+                if (-not $descOnly) { $descOnly = $line -replace $priceLine, '' }
+                Commit-Item $currentLot ($descOnly.Trim()) $p
+                $currentLot  = $null
+                $currentDesc = ""
+            }
+            else {
+                # otherwise accumulate human-readable description lines
+                if ($line) {
+                    if ($currentDesc) { $currentDesc += " " + $line.Trim() } else { $currentDesc = $line.Trim() }
                 }
             }
         }
-        elseif ($null -ne $currentLot -and $line -match '^[A-Z]' -and $line.Length -gt 10 -and $line.Length -lt 200) {
-            if ($line -notmatch '^\d+\s+\d{4}' -and $line -notmatch '^Location:') {
+    }
+
+    # Safety flush in case file ended without totals block
+    if ($currentLot) {
+        $p = Get-FirstSalePriceFromLine $currentDesc
+        if ($p) { Commit-Item $currentLot ($currentDesc.Trim()) $p }
+        $currentLot=$null; $currentDesc=""
+    }
+}
+# --- end DC Auctions / Wavebid parser ---
+
+if ($VendorPattern.Vendor -eq "Stronghold Equipment") {
+        # Stronghold-specific extraction (state machine; robust to messy OCR and line breaks)
+        $lines = ($Text -split "`n") | ForEach-Object { $_.TrimEnd() }
+
+        # A price can be "$ 1,234.56", "1,234.56$", or "1,234.56"
+        $pricePattern = '(?<!\d)(?:\$\s*)?\d{1,3}(?:,\d{3})*\.\d{2}(?:\s*\$)?(?!\d)'
+        # Lot number can be like "257A"
+        $lotPattern   = '^(?<lot>\d+[A-Z]?)\b\s*(?<rest>.*)$'
+
+        $inItems = $false
+        $currentLot = $null
+        $currentDesc = ""
+
+        function Add-ItemIfHasPrice([string]$lot, [string]$text) {
+            if (-not $lot) { return $false }
+            $m = [regex]::Match($text, $pricePattern)
+            if ($m.Success) {
+                $price = ($m.Value -replace '[^\d\.]', '')  # strip $/commas/spaces
+                $desc  = ($text -replace $pricePattern, '').Trim()
+                if (-not $desc -or $desc.Length -lt 3) { $desc = $text.Trim() } # fallback
+                $data.Items += @{
+                    LotNumber   = $lot
+                    Description = $desc
+                    HammerPrice = $price
+                }
+                return $true
+            }
+            return $false
+        }
+
+        foreach ($rawLine in $lines) {
+            $line = $rawLine.Trim()
+
+            # Start item parsing when we see a Lot header *or* the first lot row
+            if ($line -match '^(?i)Lot#') { $inItems = $true; continue }
+            if (-not $inItems -and $line -match $lotPattern) { $inItems = $true }
+
+            if (-not $inItems) { continue }
+                if ($line -match '^\*\*\*|^Subtotal\b|^Notes:') {
+                if ($currentLot) { $null = Add-ItemIfHasPrice $currentLot $currentDesc | Out-Null }
+                break
+            }
+
+            if ($line -match $lotPattern) {
+                if ($currentLot) { $null = Add-ItemIfHasPrice $currentLot $currentDesc | Out-Null }
+                $currentLot  = $Matches['lot']
+                $currentDesc = $Matches['rest'].Trim()
+                if (Add-ItemIfHasPrice $currentLot $currentDesc) { $currentLot = $null; $currentDesc = "" }
+                continue
+            }
+
+            if ($currentLot) {
+                $candidate = if ($currentDesc) { "$currentDesc $line" } else { $line }
+                if (Add-ItemIfHasPrice $currentLot $candidate) {
+                    $currentLot  = $null
+                    $currentDesc = ""
+                } elseif ($line -notmatch '^\d+[A-Z]?$') {
+                    $currentDesc = $candidate.Trim()
+                }
+            }
+        }
+
+        # Drop incomplete pending lot if no price was ever found
+        $currentLot = $null
+        $currentDesc = ""
+} else {
+        # Original Brolyn/Ritchie logic
+        $lotLines = $Text -split "`n"
+        $currentLot = $null
+        foreach ($lineRaw in $lotLines) {
+            $line = $lineRaw.Trim()
+            $matchPattern = '^\d{2,5}\s+\d{4}\s+.+'
+            if ($line -match $matchPattern) {
+                if ($line -match '^(\d{2,5})\s+\d{4}\s+(.+)') {
+                    $lotNum = $Matches[1]
+                    $desc = $Matches[2].Trim()
+                    if ($desc.Length -ge 15 -and $desc.Length -le 500) {
+                        $desc = $desc -replace '\s+', ' '
+                        $data.Items += @{ LotNumber = $lotNum; Description = $desc }
+                        $currentLot = @{ LotNumber = $lotNum; Description = $desc }
+                    }
+                }
+            }
+            elseif ($null -ne $currentLot -and $line.Length -gt 10 -and $line.Length -lt 200) {
                 $idx = $data.Items.Count - 1
-                if ($idx -ge 0 -and $data.Items[$idx].LotNumber -eq $currentLot.LotNumber) {
+                if ($idx -ge 0) {
                     $data.Items[$idx].Description += " " + $line.Trim()
                 }
             }
         }
     }
+
     if (-not $ReturnObject -and $data.Items.Count -gt 0) {
         Write-Output "   📦 Found $($data.Items.Count) lot item(s)"
     }
@@ -582,7 +802,7 @@ function Get-InvoiceData {
         $len   = [Math]::Min($Window, [Math]::Max(0, $Text.Length - $start))
         if ($len -le 0) { return $null }
         $slice = $Text.Substring($start, $len)
-        $m2 = [regex]::Match($slice, '\$\s*([\d,]+\.\d{2})')
+        $m2 = [regex]::Match($slice, '\$\s*([0-9,]+\.[0-9]{2})')
         if ($m2.Success) { return (ConvertTo-Amount -s $m2.Groups[1].Value) }
         return $null
     }
@@ -593,8 +813,18 @@ function Get-InvoiceData {
     $capturedCreditTotal    = GetAmountAfterLabel -Text $norm -Label 'Credit Total Due:' -Window 80
     $capturedGrandTotal     = GetAmountAfterLabel -Text $norm -Label 'Grand Total:'      -Window 80
 
+    # Also try "Total in US Dollars" for Stronghold
+    if ($null -eq $capturedGrandTotal) {
+        $capturedGrandTotal = GetAmountAfterLabel -Text $norm -Label 'Total in US Dollars' -Window 80
+    }
+
+    # Try "Buyer's Premium" for Stronghold
+    if ($null -eq $capturedConvenienceFee) {
+        $capturedConvenienceFee = GetAmountAfterLabel -Text $norm -Label "Buyer's Premium" -Window 80
+    }
+
     if ($null -ne $capturedSubtotal)       { $data.Totals.Subtotal       = $capturedSubtotal }
-    if ($null -ne $capturedConvenienceFee) { $data.Totals.ConvenienceFee = $capturedConvenienceFee }
+    if ($null -ne $capturedConvenienceFee) { $data.Totals.ConvenienceFee = $capturedConvenienceFee; $data.Totals.Premium = $capturedConvenienceFee }
     if ($null -ne $capturedCashTotal)      { $data.Totals.CashTotal      = $capturedCashTotal }
     if ($null -ne $capturedCreditTotal)    { $data.Totals.CreditTotal    = $capturedCreditTotal }
 
@@ -658,7 +888,9 @@ function Get-InvoiceData {
             elseif ($null -ne $data.Totals.Subtotal -and $null -ne $fee)     { $data.Totals.Total = [decimal]$data.Totals.Subtotal + [decimal]$fee }
             else                                                             { $data.Totals.Total = $data.Totals.CashTotal }
         }
-        default { $data.Totals.Total = $data.Totals.CashTotal }
+        default {
+            $data.Totals.Total = if ($null -ne $capturedGrandTotal) { $capturedGrandTotal } else { $data.Totals.CashTotal }
+        }
     }
 
     if (-not $StrictTotals -and $null -ne $data.Totals.Total -and $null -ne $data.Totals.Subtotal -and $data.Totals.Total -lt $data.Totals.Subtotal) {
@@ -676,9 +908,9 @@ function Get-InvoiceData {
         Write-Output "   ✅ Using Total: $(Fmt2 $data.Totals.Total)"
     }
 
-    return $data
-}
+    return [pscustomobject]$data
 
+}
 function Export-InvoiceData {
     <#
     .SYNOPSIS
@@ -782,7 +1014,8 @@ function Export-InvoiceData {
                 $displayCount = [Math]::Min(10, $Data.Items.Count)
                 for ($i = 0; $i -lt $displayCount; $i++) {
                     $item = $Data.Items[$i]
-                    Write-Output "Lot $($item.LotNumber): $($item.Description)"
+                    $priceInfo = if ($item.HammerPrice) { " - `$$($item.HammerPrice)" } else { "" }
+                    Write-Output "Lot $($item.LotNumber): $($item.Description)$priceInfo"
                 }
                 if ($Data.Items.Count -gt 10) { Write-Output "... and $($Data.Items.Count - 10) more items" }
             }
@@ -811,7 +1044,7 @@ function Export-InvoiceData {
 #region Main Execution
 if (-not $ReturnObject) {
     Write-Output "`n╔════════════════════════════════════════════════════════╗"
-    Write-Output "║     GENERIC PDF INVOICE PARSER v1.6.2                 ║"
+    Write-Output "║     GENERIC PDF INVOICE PARSER v1.7.0                 ║"
     Write-Output "╚════════════════════════════════════════════════════════╝`n"
 }
 
@@ -903,3 +1136,5 @@ else {
     }
 }
 #endregion
+
+

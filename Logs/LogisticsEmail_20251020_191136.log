@@ -1,0 +1,43 @@
+[2025-10-20 19:11:36] [INFO] === Logistics Email Automation Started ===
+[2025-10-20 19:11:36] [INFO] Script Version: 1.5.5
+[2025-10-20 19:11:36] [INFO] User: JohnO'NeillSr
+[2025-10-20 19:11:36] [INFO] Machine: ITSAMURAI
+[2025-10-20 19:11:36] [INFO] PDF Helper Available: True
+[2025-10-20 19:11:37] [INFO] Created output directory: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Olson and Sons\Logistics
+[2025-10-20 19:11:37] [INFO] Starting data import process
+[2025-10-20 19:11:37] [INFO] Importing CSV data from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Olson and Sons\PurchaseTracking_bscstr10271.csv
+[2025-10-20 19:11:37] [SUCCESS] Successfully imported 5 lots
+[2025-10-20 19:11:37] [INFO] Processing lot images (max 3 per lot)
+[2025-10-20 19:11:37] [DEBUG] Lot 113: Found 4 images, including 3 (max: 3)
+[2025-10-20 19:11:37] [DEBUG]   Selected: 113.jpg, 113-2.jpg, 113-3.jpg
+[2025-10-20 19:11:37] [INFO] Lot 113 has 4 images, selected: Primary, Image2, Image3
+[2025-10-20 19:11:37] [DEBUG] Lot 117: Found 1 images, including 1 (max: 3)
+[2025-10-20 19:11:37] [DEBUG]   Selected: 117.jpg
+[2025-10-20 19:11:37] [DEBUG] Lot 252: Found 7 images, including 3 (max: 3)
+[2025-10-20 19:11:37] [DEBUG]   Selected: 252.jpg, 252-2.jpg, 252-3.jpg
+[2025-10-20 19:11:37] [INFO] Lot 252 has 7 images, selected: Primary, Image2, Image3
+[2025-10-20 19:11:37] [DEBUG] Lot 257A: Found 5 images, including 3 (max: 3)
+[2025-10-20 19:11:37] [DEBUG]   Selected: 257A.jpg, 257A-2.jpg, 257A-3.jpg
+[2025-10-20 19:11:37] [INFO] Lot 257A has 5 images, selected: Primary, Image2, Image3
+[2025-10-20 19:11:37] [DEBUG] Lot 320: Found 5 images, including 3 (max: 3)
+[2025-10-20 19:11:37] [DEBUG]   Selected: 320.jpg, 320-2.jpg, 320-3.jpg
+[2025-10-20 19:11:37] [INFO] Lot 320 has 5 images, selected: Primary, Image2, Image3
+[2025-10-20 19:11:37] [INFO] Including 13 of 22 total images found
+[2025-10-20 19:11:37] [INFO] Generating HTML image report
+[2025-10-20 19:11:37] [INFO] Generating image report for 5 lots with 13 total images
+[2025-10-20 19:11:37] [SUCCESS] Image report generated successfully: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Olson and Sons\Logistics\AuctionLots_20251020_191137.html
+[2025-10-20 19:11:37] [INFO]   Lots: 5
+[2025-10-20 19:11:38] [INFO]   Images: 13
+[2025-10-20 19:11:38] [INFO] Attempting automatic PDF conversion...
+[2025-10-20 19:12:07] [SUCCESS] PDF created successfully: AuctionLots_20251020_191138.pdf
+[2025-10-20 19:12:07] [INFO] Generating HTML email with config data
+[2025-10-20 19:12:07] [INFO] Generating HTML email for 5 lots
+[2025-10-20 19:12:07] [SUCCESS] HTML email generated successfully
+[2025-10-20 19:12:07] [SUCCESS] HTML email saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Olson and Sons\Logistics\LogisticsEmail_20251020_191207.html
+[2025-10-20 19:12:07] [INFO] Outlook draft creation skipped (use -CreateOutlookDraft to enable)
+[2025-10-20 19:12:07] [INFO] Opening HTML in default browser
+[2025-10-20 19:12:07] [SUCCESS] Processing report exported to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Olson and Sons\Logistics\ProcessingReport_20251020_191207.html
+[2025-10-20 19:12:07] [SUCCESS] === Logistics Email Automation Completed Successfully ===
+[2025-10-20 19:12:07] [INFO] Output files saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Olson and Sons\Logistics
+[2025-10-20 19:12:07] [INFO] Script execution completed
+[2025-10-20 19:12:07] [INFO] Total execution time: 00:00:30.9340533

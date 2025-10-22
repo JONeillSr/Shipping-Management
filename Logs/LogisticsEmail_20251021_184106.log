@@ -1,0 +1,31 @@
+[2025-10-21 18:41:06] [INFO] === Logistics Email Automation Started ===
+[2025-10-21 18:41:06] [INFO] Script Version: 1.5.5
+[2025-10-21 18:41:06] [INFO] User: JohnO'NeillSr
+[2025-10-21 18:41:06] [INFO] Machine: ITSAMURAI
+[2025-10-21 18:41:06] [INFO] PDF Helper Available: True
+[2025-10-21 18:41:06] [INFO] Starting data import process
+[2025-10-21 18:41:06] [INFO] Importing CSV data from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\FL Government Surplus 10-2025\PurchaseTracking.csv
+[2025-10-21 18:41:07] [SUCCESS] Successfully imported 1 lots
+[2025-10-21 18:41:07] [INFO] Processing lot images (max 3 per lot)
+[2025-10-21 18:41:07] [DEBUG] Lot 705: Found 30 images, including 3 (max: 3)
+[2025-10-21 18:41:07] [DEBUG]   Selected: 705.jpg, 705-2.jpg, 705-3.jpg
+[2025-10-21 18:41:07] [INFO] Lot 705 has 30 images, selected: Primary, Image2, Image3
+[2025-10-21 18:41:07] [INFO] Including 3 of 30 total images found
+[2025-10-21 18:41:07] [INFO] Generating HTML image report
+[2025-10-21 18:41:07] [INFO] Generating image report for 1 lots with 3 total images
+[2025-10-21 18:41:07] [SUCCESS] Image report generated successfully: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\FL Government Surplus 10-2025\Logistics\AuctionLots_20251021_184107.html
+[2025-10-21 18:41:07] [INFO]   Lots: 1
+[2025-10-21 18:41:07] [INFO]   Images: 3
+[2025-10-21 18:41:07] [INFO] Attempting automatic PDF conversion...
+[2025-10-21 18:41:35] [SUCCESS] PDF created successfully: AuctionLots_20251021_184107.pdf
+[2025-10-21 18:41:35] [INFO] Generating HTML email with config data
+[2025-10-21 18:41:35] [INFO] Generating HTML email for 1 lots
+[2025-10-21 18:41:35] [SUCCESS] HTML email generated successfully
+[2025-10-21 18:41:35] [SUCCESS] HTML email saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\FL Government Surplus 10-2025\Logistics\LogisticsEmail_20251021_184135.html
+[2025-10-21 18:41:35] [INFO] Outlook draft creation skipped (use -CreateOutlookDraft to enable)
+[2025-10-21 18:41:35] [INFO] Opening HTML in default browser
+[2025-10-21 18:41:36] [SUCCESS] Processing report exported to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\FL Government Surplus 10-2025\Logistics\ProcessingReport_20251021_184136.html
+[2025-10-21 18:41:36] [SUCCESS] === Logistics Email Automation Completed Successfully ===
+[2025-10-21 18:41:36] [INFO] Output files saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\FL Government Surplus 10-2025\Logistics
+[2025-10-21 18:41:36] [INFO] Script execution completed
+[2025-10-21 18:41:36] [INFO] Total execution time: 00:00:29.5180724

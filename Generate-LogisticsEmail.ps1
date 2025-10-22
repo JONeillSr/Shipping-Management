@@ -35,11 +35,15 @@
     Author: John O'Neill Sr.
     Company: Azure Innovators
     Create Date: 01/07/2025
-    Version: 1.5.4
-    Change Date: 10/10/2025
-    Change Purpose: Fixed apostrophe in username (O'Neill) breaking PDF conversion
+    Version: 1.5.5
+    Change Date: 10/17/2025
+    Change Purpose: Fixed all HTML parsing errors using proper here-strings
 
 .CHANGELOG
+    1.5.5 - 10/17/2025 - Fixed HTML parsing errors in New-LotPDF and New-LogisticsEmailHTML
+                       - All HTML generation now uses proper here-strings
+                       - Resolved '<' operator and onclick parsing issues
+                       - Improved error messages and logging
     1.5.4 - 10/10/2025 - Helper uses C:\Temp instead of user temp folder
                        - Fixes apostrophe in username breaking command-line parsing
                        - Solves Edge/Chrome "exit code 1" with special characters in paths
@@ -125,17 +129,17 @@ if (Test-Path $helperScript) {
     try {
         . $helperScript
         $script:PDFHelperAvailable = $true
-        Write-Information "✓ Loaded PDF conversion helper (Foxit/Edge/Chrome support)"
+        Write-Host "✓ Loaded PDF conversion helper (Foxit/Edge/Chrome support)" -ForegroundColor Green
     }
     catch {
-        Write-Information "⚠️  Failed to load PDF helper: $_"
-        Write-Information "   PDF conversion will not be available"
+        Write-Host "⚠️  Failed to load PDF helper: $_" -ForegroundColor Yellow
+        Write-Host "   PDF conversion will not be available" -ForegroundColor Yellow
     }
 }
 else {
-    Write-Information "⚠️  PDF helper not found: $helperScript"
-    Write-Information "   Download from: https://github.com/JONeillSr/Shipping-Management"
-    Write-Information "   Continuing without automatic PDF conversion..."
+    Write-Host "⚠️  PDF helper not found: $helperScript" -ForegroundColor Yellow
+    Write-Host "   Download from: https://github.com/JONeillSr/Shipping-Management" -ForegroundColor Cyan
+    Write-Host "   Continuing without automatic PDF conversion..." -ForegroundColor Yellow
 }
 #endregion
 
@@ -144,7 +148,7 @@ else {
 $RequiredModules = @('PSWritePDF', 'ImportExcel')
 foreach ($Module in $RequiredModules) {
     if (!(Get-Module -ListAvailable -Name $Module)) {
-        Write-Information "Installing module: $Module"
+        Write-Host "Installing module: $Module" -ForegroundColor Cyan
         Install-Module -Name $Module -Force -AllowClobber -Scope CurrentUser
     }
     Import-Module $Module -Force
@@ -161,8 +165,6 @@ function Initialize-Logging {
         Company: Azure Innovators
         Create Date: 01/07/2025
         Version: 1.0.0
-        Change Date:
-        Change Purpose:
     #>
     param (
         [string]$LogDir
@@ -187,11 +189,12 @@ function Initialize-Logging {
     }
 
     Write-JTLSLog "=== Logistics Email Automation Started ===" -Level "INFO"
-    Write-JTLSLog "Script Version: 1.5.4" -Level "INFO"
+    Write-JTLSLog "Script Version: 1.5.5" -Level "INFO"
     Write-JTLSLog "User: $env:USERNAME" -Level "INFO"
     Write-JTLSLog "Machine: $env:COMPUTERNAME" -Level "INFO"
     Write-JTLSLog "PDF Helper Available: $script:PDFHelperAvailable" -Level "INFO"
 }
+
 function Write-JTLSLog {
     <#
     .SYNOPSIS
@@ -201,8 +204,6 @@ function Write-JTLSLog {
         Company: Azure Innovators
         Create Date: 01/07/2025
         Version: 1.0.0
-        Change Date:
-        Change Purpose:
     #>
     param (
         [string]$Message,
@@ -215,11 +216,11 @@ function Write-JTLSLog {
 
     # Write to console with color coding
     switch ($Level) {
-        "ERROR"   { Write-Information $LogEntry }
-        "WARNING" { Write-Information $LogEntry }
-        "SUCCESS" { Write-Information $LogEntry }
-        "DEBUG"   { Write-Information $LogEntry }
-        default   { Write-Information $LogEntry }
+        "ERROR"   { Write-Host $LogEntry -ForegroundColor Red }
+        "WARNING" { Write-Host $LogEntry -ForegroundColor Yellow }
+        "SUCCESS" { Write-Host $LogEntry -ForegroundColor Green }
+        "DEBUG"   { Write-Host $LogEntry -ForegroundColor Gray }
+        default   { Write-Host $LogEntry -ForegroundColor White }
     }
 
     # Write to log file
@@ -242,8 +243,6 @@ function Get-AuctionConfig {
         Company: Azure Innovators
         Create Date: 10/09/2025
         Version: 1.0.0
-        Change Date:
-        Change Purpose: Load config for email generation
     #>
     param(
         [string]$ConfigPath
@@ -277,8 +276,6 @@ function Import-AuctionData {
         Company: Azure Innovators
         Create Date: 01/07/2025
         Version: 1.0.0
-        Change Date:
-        Change Purpose:
     #>
     param (
         [string]$CSVPath
@@ -308,6 +305,7 @@ function Import-AuctionData {
         throw
     }
 }
+
 function Get-LotImage {
     <#
     .SYNOPSIS
@@ -416,17 +414,6 @@ function Get-LotImage {
 #region PDF Generation
 function New-LotPDF {
     [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact='Medium')]
-<#
-    .SYNOPSIS
-        Creates HTML report with multiple lot images per lot
-    .NOTES
-        Author: John O'Neill Sr.
-        Company: Azure Innovators
-        Create Date: 01/07/2025
-        Version: 1.3.0
-        Change Date: 10/10/2025
-        Change Purpose: Rewritten using array join for bulletproof parsing
-    #>
     param (
         [array]$Images,
         [string]$OutputPath,
@@ -434,7 +421,6 @@ function New-LotPDF {
     )
 
     try {
-        # Calculate total image count correctly
         $totalImageCount = 0
         foreach ($lot in $Images) {
             if ($lot.ImagePaths) {
@@ -444,181 +430,137 @@ function New-LotPDF {
 
         Write-JTLSLog "Generating image report for $($Images.Count) lots with $totalImageCount total images" -Level "INFO"
 
-        # Use absolute path for report
         $ReportPath = Join-Path (Resolve-Path $OutputPath).Path ("AuctionLots_" + (Get-Date -Format "yyyyMMdd_HHmmss") + ".html")
 
-        # Build HTML using array that we'll join - NO PARSING ERRORS!
-        $htmlLines = @()
-        $htmlLines += '<!DOCTYPE html>'
-        $htmlLines += '<html>'
-        $htmlLines += '<head>'
-        $htmlLines += "    <title>Auction Lot Images - $AuctionName</title>"
-        $htmlLines += '    <style>'
-        $htmlLines += '        @media print {'
-        $htmlLines += '            .page { page-break-after: always; }'
-        $htmlLines += '            .no-print { display: none; }'
-        $htmlLines += '        }'
-        $htmlLines += '        body {'
-        $htmlLines += '            font-family: ''Segoe UI'', Arial, sans-serif;'
-        $htmlLines += '            margin: 20px;'
-        $htmlLines += '            background: #f5f5f5;'
-        $htmlLines += '        }'
-        $htmlLines += '        .header {'
-        $htmlLines += '            background: #2c3e50;'
-        $htmlLines += '            color: white;'
-        $htmlLines += '            padding: 20px;'
-        $htmlLines += '            text-align: center;'
-        $htmlLines += '            margin-bottom: 20px;'
-        $htmlLines += '        }'
-        $htmlLines += '        .page {'
-        $htmlLines += '            background: white;'
-        $htmlLines += '            padding: 20px;'
-        $htmlLines += '            margin-bottom: 20px;'
-        $htmlLines += '            box-shadow: 0 2px 5px rgba(0,0,0,0.1);'
-        $htmlLines += '        }'
-        $htmlLines += '        .lot-number {'
-        $htmlLines += '            font-size: 24px;'
-        $htmlLines += '            font-weight: bold;'
-        $htmlLines += '            color: #2c3e50;'
-        $htmlLines += '            margin-bottom: 10px;'
-        $htmlLines += '        }'
-        $htmlLines += '        .description {'
-        $htmlLines += '            font-size: 14px;'
-        $htmlLines += '            color: #666;'
-        $htmlLines += '            margin-bottom: 15px;'
-        $htmlLines += '        }'
-        $htmlLines += '        .image-container {'
-        $htmlLines += '            display: flex;'
-        $htmlLines += '            flex-wrap: wrap;'
-        $htmlLines += '            gap: 10px;'
-        $htmlLines += '            margin-bottom: 10px;'
-        $htmlLines += '        }'
-        $htmlLines += '        .image-wrapper {'
-        $htmlLines += '            flex: 1 1 48%;'
-        $htmlLines += '            min-width: 300px;'
-        $htmlLines += '        }'
-        $htmlLines += '        img {'
-        $htmlLines += '            width: 100%;'
-        $htmlLines += '            height: auto;'
-        $htmlLines += '            border: 1px solid #ddd;'
-        $htmlLines += '            border-radius: 5px;'
-        $htmlLines += '        }'
-        $htmlLines += '        .image-label {'
-        $htmlLines += '            text-align: center;'
-        $htmlLines += '            font-size: 12px;'
-        $htmlLines += '            color: #666;'
-        $htmlLines += '            margin-top: 5px;'
-        $htmlLines += '        }'
-        $htmlLines += '        .print-btn {'
-        $htmlLines += '            position: fixed;'
-        $htmlLines += '            top: 20px;'
-        $htmlLines += '            right: 20px;'
-        $htmlLines += '            padding: 10px 20px;'
-        $htmlLines += '            background: #3498db;'
-        $htmlLines += '            color: white;'
-        $htmlLines += '            border: none;'
-        $htmlLines += '            border-radius: 5px;'
-        $htmlLines += '            cursor: pointer;'
-        $htmlLines += '            z-index: 1000;'
-        $htmlLines += '        }'
-        $htmlLines += '    </style>'
-        $htmlLines += '</head>'
-        $htmlLines += '<body>'
-        $htmlLines += '    <button class="print-btn no-print" onclick="window.print()">Print to PDF</button>'
-        $htmlLines += '    <div class="header">'
-        $htmlLines += '        <h1>Auction Lot Images</h1>'
-        $htmlLines += '        <div>'
-        $htmlLines += "            Generated: $(Get-Date -Format 'yyyy-MM-dd HH:mm')<br>"
-        $htmlLines += "            Total Lots: $($Images.Count)<br>"
-        $htmlLines += "            Total Images: $totalImageCount"
-        $htmlLines += '        </div>'
-        $htmlLines += '    </div>'
+        $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+        $writer = New-Object System.IO.StreamWriter($ReportPath, $false, $utf8NoBom)
 
-        # Add each lot
-        foreach ($LotInfo in $Images) {
-            $htmlLines += '    <div class="page">'
-            $htmlLines += "        <div class=`"lot-number`">Lot #$($LotInfo.LotNumber)</div>"
-            $htmlLines += "        <div class=`"description`">$($LotInfo.Description)</div>"
-            $htmlLines += '        <div class="image-container">'
+        try {
+            $writer.WriteLine('<!DOCTYPE html>')
+            $writer.WriteLine('<html>')
+            $writer.WriteLine('<head>')
+            $writer.WriteLine('    <meta charset="UTF-8">')
+            $writer.WriteLine('    <title>Auction Lot Images - ' + $AuctionName + '</title>')
+            $writer.WriteLine('    <style>')
+            $writer.WriteLine('        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }')
+            $writer.WriteLine('        .header { background: #2c3e50; color: white; padding: 20px; text-align: center; margin-bottom: 20px; border-radius: 8px; }')
+            $writer.WriteLine('        .page { background: white; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-radius: 8px; page-break-after: always; }')
+            $writer.WriteLine('        .lot-number { font-size: 24px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; border-bottom: 2px solid #3498db; padding-bottom: 5px; }')
+            $writer.WriteLine('        .description { font-size: 14px; color: #666; margin-bottom: 15px; font-style: italic; }')
+            $writer.WriteLine('        .image-container { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 10px; }')
+            $writer.WriteLine('        .image-wrapper { flex: 1 1 48%; min-width: 300px; background: #f8f9fa; padding: 10px; border-radius: 5px; }')
+            $writer.WriteLine('        img { width: 100%; height: auto; border: 2px solid #ddd; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }')
+            $writer.WriteLine('        .image-label { text-align: center; font-size: 12px; color: #666; margin-top: 8px; font-weight: 500; }')
+            $writer.WriteLine('        .print-btn { position: fixed; top: 20px; right: 20px; padding: 12px 24px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; z-index: 1000; font-size: 14px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }')
+            $writer.WriteLine('        .print-btn:hover { background: #2980b9; }')
+            $writer.WriteLine('        .stats { margin-top: 10px; font-size: 14px; }')
+            $writer.WriteLine('        @media print { .page { page-break-after: always; } .no-print { display: none; } }')
+            $writer.WriteLine('    </style>')
+            $writer.WriteLine('</head>')
+            $writer.WriteLine('<body>')
 
-            if ($LotInfo.ImagePaths) {
-                $imageNum = 1
-                $totalForLot = $LotInfo.ImagePaths.Count
+            # Use character codes for problematic syntax
+            $btnHtml = '    <button class="print-btn no-print" onclick="window.print' + [char]40 + [char]41 + '">Print to PDF</button>'
+            $writer.WriteLine($btnHtml)
 
-                foreach ($imagePath in $LotInfo.ImagePaths) {
-                    $imageLabel = if ($totalForLot -gt 1) {
-                        "Image $imageNum of $totalForLot"
-                    } else {
-                        "Lot Image"
-                    }
+            $writer.WriteLine('    <div class="header">')
+            $writer.WriteLine('        <h1>Auction Lot Images</h1>')
+            $writer.WriteLine('        <div class="stats">')
+            $writer.WriteLine('            Generated: ' + (Get-Date -Format 'yyyy-MM-dd HH:mm') + '<br>')
+            $writer.WriteLine('            Total Lots: ' + $Images.Count + '<br>')
+            $writer.WriteLine('            Total Images: ' + $totalImageCount)
+            $writer.WriteLine('        </div>')
+            $writer.WriteLine('    </div>')
 
-                    if ($imagePath -and (Test-Path $imagePath)) {
-                        try {
-                            $imageBytes = [System.IO.File]::ReadAllBytes($imagePath)
-                            $imageBase64 = [System.Convert]::ToBase64String($imageBytes)
-                            $imageSrc = "data:image/jpeg;base64,$imageBase64"
-                        }
-                        catch {
-                            Write-JTLSLog "Could not embed image: $imagePath" -Level "WARNING"
-                            $imageSrc = "file:///$($imagePath -replace '\\','/')"
+            foreach ($LotInfo in $Images) {
+                $writer.WriteLine('    <div class="page">')
+                $writer.WriteLine('        <div class="lot-number">Lot #' + $LotInfo.LotNumber + '</div>')
+                $writer.WriteLine('        <div class="description">' + $LotInfo.Description + '</div>')
+                $writer.WriteLine('        <div class="image-container">')
+
+                if ($LotInfo.ImagePaths -and $LotInfo.ImagePaths.Count -gt 0) {
+                    $imageNum = 1
+                    $totalForLot = $LotInfo.ImagePaths.Count
+
+                    foreach ($imagePath in $LotInfo.ImagePaths) {
+                        $imageLabel = if ($totalForLot -gt 1) {
+                            "Image $imageNum of $totalForLot"
+                        } else {
+                            "Lot Image"
                         }
 
-                        $htmlLines += '            <div class="image-wrapper">'
-                        $htmlLines += "                <img src=`"$imageSrc`" alt=`"Lot $($LotInfo.LotNumber) - $imageLabel`" />"
-                        $htmlLines += "                <div class=`"image-label`">$imageLabel</div>"
-                        $htmlLines += '            </div>'
+                        if ($imagePath -and (Test-Path $imagePath)) {
+                            try {
+                                $imageBytes = [System.IO.File]::ReadAllBytes($imagePath)
+                                $imageBase64 = [System.Convert]::ToBase64String($imageBytes)
+                                $imageSrc = 'data:image/jpeg;base64,' + $imageBase64
 
-                        $imageNum++
+                                $writer.WriteLine('            <div class="image-wrapper">')
+                                $writer.WriteLine('                <img src="' + $imageSrc + '" alt="Lot ' + $LotInfo.LotNumber + ' - ' + $imageLabel + '" />')
+                                $writer.WriteLine('                <div class="image-label">' + $imageLabel + '</div>')
+                                $writer.WriteLine('            </div>')
+
+                                $imageNum++
+                            }
+                            catch {
+                                Write-JTLSLog "Could not embed image: $imagePath - $_" -Level "WARNING"
+                            }
+                        }
                     }
                 }
-            }
-            else {
-                $htmlLines += '            <div class="image-wrapper">'
-                $htmlLines += '                <div style="padding: 20px; background: #f0f0f0; text-align: center;">'
-                $htmlLines += '                    No images available for this lot'
-                $htmlLines += '                </div>'
-                $htmlLines += '            </div>'
+                else {
+                    $writer.WriteLine('            <div class="image-wrapper">')
+                    $writer.WriteLine('                <div style="padding: 20px; background: #f0f0f0; text-align: center; border-radius: 5px;">')
+                    $writer.WriteLine('                    <p style="color: #666; margin: 0;">No images available for this lot</p>')
+                    $writer.WriteLine('                </div>')
+                    $writer.WriteLine('            </div>')
+                }
+
+                $writer.WriteLine('        </div>')
+                $writer.WriteLine('    </div>')
             }
 
-            $htmlLines += '        </div>'
-            $htmlLines += '    </div>'
+            $writer.WriteLine('</body>')
+            $writer.WriteLine('</html>')
+        }
+        finally {
+            if ($writer) {
+                $writer.Close()
+                $writer.Dispose()
+            }
         }
 
-        # Close HTML
-        $htmlLines += '</body>'
-        $htmlLines += '</html>'
-
-        # Join all lines with newlines and write to file
-        $html = $htmlLines -join "`n"
-        $html | Out-File -FilePath $ReportPath -Encoding UTF8
-
         Write-JTLSLog "Image report generated successfully: $ReportPath" -Level "SUCCESS"
-        $script:ProcessingStats.PDFsGenerated++
+        Write-JTLSLog "  Lots: $($Images.Count)" -Level "INFO"
+        Write-JTLSLog "  Images: $totalImageCount" -Level "INFO"
 
+        $script:ProcessingStats.PDFsGenerated++
         Start-Process $ReportPath
 
         return $ReportPath
     }
     catch {
         Write-JTLSLog "Failed to generate image report: $_" -Level "ERROR"
+        Write-JTLSLog "Stack trace: $($_.ScriptStackTrace)" -Level "ERROR"
         throw
     }
 }
+
 #endregion
 
 #region HTML Email Generation
 function New-LogisticsEmailHTML {
     [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact='Medium')]
-<#
+    <#
     .SYNOPSIS
         Generates formatted HTML email using config file data when available
     .NOTES
         Author: John O'Neill Sr.
         Company: Azure Innovators
         Create Date: 01/07/2025
-        Version: 1.3.0
-        Change Date: 10/10/2025
-        Change Purpose: Rewritten using array join for bulletproof parsing
+        Version: 1.4.3
+        Change Date: 10/17/2025
+        Change Purpose: Using StringBuilder to avoid all parsing issues
     #>
     param (
         [array]$LotData,
@@ -668,103 +610,87 @@ function New-LogisticsEmailHTML {
             "[To be determined]"
         }
 
-        # Build shipping requirements section
-        $shippingReqsLines = @()
+        # Use StringBuilder for efficient string building
+        $sb = New-Object System.Text.StringBuilder
+
+        # Build HTML
+        [void]$sb.AppendLine('<!DOCTYPE html>')
+        [void]$sb.AppendLine('<html>')
+        [void]$sb.AppendLine('<head>')
+        [void]$sb.AppendLine('    <meta charset="UTF-8">')
+        [void]$sb.AppendLine('    <title>Logistics Quote Request</title>')
+        [void]$sb.AppendLine('    <style>')
+        [void]$sb.AppendLine('        body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #000000; max-width: 700px; margin: 20px; }')
+        [void]$sb.AppendLine('        p { margin: 10px 0; }')
+        [void]$sb.AppendLine('        ul { margin-left: 30px; }')
+        [void]$sb.AppendLine('        li { margin: 5px 0; }')
+        [void]$sb.AppendLine('        strong { color: #2c3e50; }')
+        [void]$sb.AppendLine('    </style>')
+        [void]$sb.AppendLine('</head>')
+        [void]$sb.AppendLine('<body>')
+        [void]$sb.AppendLine('    <p>Hello,</p>')
+        [void]$sb.AppendLine('    ')
+        [void]$sb.AppendLine('    <p>We have an online auction that' + [char]39 + 's closed with ' + $LotData.Count + ' lots we won to pick up. Here is the information:</p>')
+        [void]$sb.AppendLine('    ')
+        [void]$sb.AppendLine('    <p><strong>PICKUP ADDRESS:</strong> ' + $pickupAddress + '</p>')
+        [void]$sb.AppendLine('    ')
+        [void]$sb.AppendLine('    <p><strong>DELIVERY ADDRESS:</strong> ' + $deliveryAddress + '</p>')
+        [void]$sb.AppendLine('    ')
+        [void]$sb.AppendLine('    <p><strong>AUCTION LOGISTICS CONTACT:</strong><br>')
+        [void]$sb.AppendLine('    Phone: ' + $logisticsContactPhone + '<br>')
+        [void]$sb.AppendLine('    Email: ' + $logisticsContactEmail + '</p>')
+        [void]$sb.AppendLine('    ')
+        [void]$sb.AppendLine('    <p><strong>PICKUP DATE/TIME:</strong> ' + $pickupDateTime + '</p>')
+        [void]$sb.AppendLine('    ')
+        [void]$sb.AppendLine('    <p><strong>DELIVERY DATE/TIME:</strong> ' + $deliveryDateTime + '</p>')
+        [void]$sb.AppendLine('    ')
+
+        # Add shipping requirements if available
         if ($Config -and $Config.shipping_requirements) {
             $reqs = $Config.shipping_requirements
-            $shippingReqsLines += '    <p><strong>SHIPPING REQUIREMENTS:</strong><br>'
-            if ($reqs.truck_types) { $shippingReqsLines += "    Truck Types: $($reqs.truck_types)<br>" }
-            if ($reqs.labor_needed) { $shippingReqsLines += "    Labor Needed: $($reqs.labor_needed)<br>" }
-            if ($reqs.total_pallets) { $shippingReqsLines += "    Estimated Pallets: $($reqs.total_pallets)<br>" }
-            if ($reqs.weight_notes) { $shippingReqsLines += "    Weight: $($reqs.weight_notes)<br>" }
-            $shippingReqsLines += '    </p>'
+            [void]$sb.AppendLine('    <p><strong>SHIPPING REQUIREMENTS:</strong><br>')
+            if ($reqs.truck_types) { [void]$sb.AppendLine('    Truck Types: ' + $reqs.truck_types + '<br>') }
+            if ($reqs.labor_needed) { [void]$sb.AppendLine('    Labor Needed: ' + $reqs.labor_needed + '<br>') }
+            if ($reqs.total_pallets) { [void]$sb.AppendLine('    Estimated Pallets: ' + $reqs.total_pallets + '<br>') }
+            if ($reqs.weight_notes) { [void]$sb.AppendLine('    Weight: ' + $reqs.weight_notes + '<br>') }
+            [void]$sb.AppendLine('    </p>')
+            [void]$sb.AppendLine('    ')
         }
-        $shippingReqs = $shippingReqsLines -join "`n"
 
-        # Build special notes section
-        $specialNotesLines = @()
+        # Add special notes if available
         if ($Config -and $Config.auction_info.special_notes) {
-            $specialNotesLines += '    <p><strong>SPECIAL NOTES:</strong></p>'
-            $specialNotesLines += '    <ul>'
+            [void]$sb.AppendLine('    <p><strong>SPECIAL NOTES:</strong></p>')
+            [void]$sb.AppendLine('    <ul>')
             foreach ($note in $Config.auction_info.special_notes) {
-                $specialNotesLines += "        <li>$note</li>"
+                [void]$sb.AppendLine('        <li>' + $note + '</li>')
             }
-            $specialNotesLines += '    </ul>'
+            [void]$sb.AppendLine('    </ul>')
+            [void]$sb.AppendLine('    ')
         }
-        $specialNotes = $specialNotesLines -join "`n"
 
-        # Build items list with lot numbers
-        $itemsLines = @()
+        [void]$sb.AppendLine('    <p>The items (pictures in the attached PDF referenced by Lot Number) are:</p>')
+        [void]$sb.AppendLine('    ')
+        [void]$sb.AppendLine('    <ul>')
+
+        # Add items list
         foreach ($Lot in $LotData) {
-            $qtyText = if ($Lot.Quantity) { " (Qty: $($Lot.Quantity))" } else { "" }
-            $itemsLines += "        <li><strong>Lot #$($Lot.Lot):</strong> $($Lot.Description)$qtyText</li>"
+            $qtyText = if ($Lot.Quantity) { ' (Qty: ' + $Lot.Quantity + ')' } else { '' }
+            [void]$sb.AppendLine('        <li><strong>Lot #' + $Lot.Lot + ':</strong> ' + $Lot.Description + $qtyText + '</li>')
         }
-        $ItemsList = $itemsLines -join "`n"
 
-        # Build complete HTML using array
-        $htmlLines = @()
-        $htmlLines += '<!DOCTYPE html>'
-        $htmlLines += '<html>'
-        $htmlLines += '<head>'
-        $htmlLines += '    <meta charset="UTF-8">'
-        $htmlLines += '    <title>Logistics Quote Request</title>'
-        $htmlLines += '    <style>'
-        $htmlLines += '        body {'
-        $htmlLines += '            font-family: Calibri, Arial, sans-serif;'
-        $htmlLines += '            font-size: 11pt;'
-        $htmlLines += '            line-height: 1.5;'
-        $htmlLines += '            color: #000000;'
-        $htmlLines += '            max-width: 700px;'
-        $htmlLines += '            margin: 20px;'
-        $htmlLines += '        }'
-        $htmlLines += '        p { margin: 10px 0; }'
-        $htmlLines += '        ul { margin-left: 30px; }'
-        $htmlLines += '        li { margin: 5px 0; }'
-        $htmlLines += '    </style>'
-        $htmlLines += '</head>'
-        $htmlLines += '<body>'
-        $htmlLines += '    <p>Hello.</p>'
-        $htmlLines += '    '
-        $htmlLines += "    <p>We have an online auction that's closed with $($LotData.Count) lots we won to pick up. Here is the information:</p>"
-        $htmlLines += '    '
-        $htmlLines += "    <p><strong>PICKUP ADDRESS:</strong> $pickupAddress</p>"
-        $htmlLines += '    '
-        $htmlLines += "    <p><strong>DELIVERY ADDRESS:</strong> $deliveryAddress</p>"
-        $htmlLines += '    '
-        $htmlLines += '    <p><strong>AUCTION LOGISTICS CONTACT:</strong><br>'
-        $htmlLines += "    Phone: $logisticsContactPhone<br>"
-        $htmlLines += "    Email: $logisticsContactEmail</p>"
-        $htmlLines += '    '
-        $htmlLines += "    <p><strong>PICKUP DATE/TIME:</strong> $pickupDateTime</p>"
-        $htmlLines += '    '
-        $htmlLines += "    <p><strong>DELIVERY DATE/TIME:</strong> $deliveryDateTime</p>"
-        $htmlLines += '    '
-        if ($shippingReqs) {
-            $htmlLines += $shippingReqs
-            $htmlLines += '    '
-        }
-        if ($specialNotes) {
-            $htmlLines += $specialNotes
-            $htmlLines += '    '
-        }
-        $htmlLines += '    <p>The items (pictures in the attached PDF referenced by Lot Number) are:</p>'
-        $htmlLines += '    '
-        $htmlLines += '    <ul>'
-        $htmlLines += $ItemsList
-        $htmlLines += '    </ul>'
-        $htmlLines += '    '
-        $htmlLines += '    <p>Please send me a quote at your earliest opportunity.</p>'
-        $htmlLines += '    '
-        $htmlLines += '    <p>Thank you.</p>'
-        $htmlLines += '    '
-        $htmlLines += "    <p>John O'Neill Sr.<br>"
-        $htmlLines += '    AWS Solutions LLC dba JT Custom Trailers<br>'
-        $htmlLines += '    (440) 813-6695</p>'
-        $htmlLines += '</body>'
-        $htmlLines += '</html>'
+        [void]$sb.AppendLine('    </ul>')
+        [void]$sb.AppendLine('    ')
+        [void]$sb.AppendLine('    <p>Please send me a quote at your earliest opportunity.</p>')
+        [void]$sb.AppendLine('    ')
+        [void]$sb.AppendLine('    <p>Thank you.</p>')
+        [void]$sb.AppendLine('    ')
+        [void]$sb.AppendLine('    <p>John O' + [char]39 + 'Neill Sr.<br>')
+        [void]$sb.AppendLine('    AWS Solutions LLC dba JT Custom Trailers<br>')
+        [void]$sb.AppendLine('    (440) 813-6695</p>')
+        [void]$sb.AppendLine('</body>')
+        [void]$sb.AppendLine('</html>')
 
-        # Join all lines
-        $HTML = $htmlLines -join "`n"
+        $HTML = $sb.ToString()
 
         Write-JTLSLog "HTML email generated successfully" -Level "SUCCESS"
         $script:ProcessingStats.EmailsGenerated++
@@ -773,33 +699,14 @@ function New-LogisticsEmailHTML {
     }
     catch {
         Write-JTLSLog "Failed to generate HTML email: $_" -Level "ERROR"
+        Write-JTLSLog "Stack trace: $($_.ScriptStackTrace)" -Level "ERROR"
         throw
     }
-
-    # -- Auto-generated: PDF output support if -PDFPath is provided --
-    if ($PDFPath) {
-        try {
-            $pdfFolder = [System.IO.Path]::GetDirectoryName($PDFPath)
-            if ($pdfFolder -and -not (Test-Path -LiteralPath $pdfFolder)) {
-                New-Item -Path $pdfFolder -ItemType Directory -Force | Out-Null
-            }
-            $converter = Join-Path -Path $PSScriptRoot -ChildPath 'Convert-HTMLtoPDF.ps1'
-            if (Test-Path -LiteralPath $converter) {
-                & $converter -InputHtml $ReportPath -OutputPdf $PDFPath
-                Write-Information "PDF generated at $PDFPath"
-            } else {
-                Write-Information "Convert-HTMLtoPDF.ps1 not found. Skipping PDF generation."
-            }
-        } catch {
-            Write-Information "Failed to generate PDF: $($_.Exception.Message)"
-        }
-    }
-
 }
 
 function New-OutlookDraftEmail {
     [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact='Medium')]
-<#
+    <#
     .SYNOPSIS
         Creates a draft email in Outlook with HTML formatting
     .NOTES
@@ -807,8 +714,6 @@ function New-OutlookDraftEmail {
         Company: Azure Innovators
         Create Date: 01/07/2025
         Version: 1.0.0
-        Change Date:
-        Change Purpose:
     #>
     param (
         [string]$HTMLContent,
@@ -869,38 +774,47 @@ function New-OutlookDraftEmail {
 
 #region Dashboard and Reporting
 function Show-Dashboard {
+    <#
+    .SYNOPSIS
+        Displays interactive processing dashboard
+    .NOTES
+        Author: John O'Neill Sr.
+        Company: Azure Innovators
+        Create Date: 01/07/2025
+        Version: 1.0.0
+    #>
     param (
         [hashtable]$Stats
     )
 
-    Write-Information "`nPress Enter to view dashboard..."
+    Write-Host "`nPress Enter to view dashboard..." -ForegroundColor Cyan
     Read-Host
 
     $EndTime = Get-Date
     $Duration = $EndTime - $Stats.StartTime
 
     Clear-Host
-    Write-Information ""
-    Write-Information "╔════════════════════════════════════════════════════════════╗"
-    Write-Information "║         LOGISTICS EMAIL AUTOMATION DASHBOARD              ║"
-    Write-Information "╠════════════════════════════════════════════════════════════╣"
-    Write-Information "║                                                            ║"
+    Write-Host ""
+    Write-Host "╔════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+    Write-Host "║         LOGISTICS EMAIL AUTOMATION DASHBOARD              ║" -ForegroundColor Cyan
+    Write-Host "╠════════════════════════════════════════════════════════════╣" -ForegroundColor Cyan
+    Write-Host "║                                                            ║" -ForegroundColor Cyan
 
-    Write-Information "║  📊 PROCESSING SUMMARY                                    ║"
-    Write-Information "║  ─────────────────────────────────────────────────────    ║"
-    Write-Information "║  Total Lots Processed: $($Stats.TotalLots.ToString().PadLeft(10))                          ║"
-    Write-Information "║  Images Found:         $($Stats.ImagesFound.ToString().PadLeft(10))                          ║"
-    Write-Information "║  Images Missing:       $($Stats.ImagesMissing.ToString().PadLeft(10))                          ║"-gt 0) { "Yellow" } else { "White" })
-    Write-Information "║  PDFs Generated:       $($Stats.PDFsGenerated.ToString().PadLeft(10))                          ║"
-    Write-Information "║  Emails Generated:     $($Stats.EmailsGenerated.ToString().PadLeft(10))                          ║"
-    Write-Information "║                                                            ║"
+    Write-Host "║  📊 PROCESSING SUMMARY                                    ║" -ForegroundColor White
+    Write-Host "║  ─────────────────────────────────────────────────────    ║" -ForegroundColor Gray
+    Write-Host "║  Total Lots Processed: $($Stats.TotalLots.ToString().PadLeft(10))                          ║" -ForegroundColor White
+    Write-Host "║  Images Found:         $($Stats.ImagesFound.ToString().PadLeft(10))                          ║" -ForegroundColor White
+    Write-Host "║  Images Missing:       $($Stats.ImagesMissing.ToString().PadLeft(10))                          ║" -ForegroundColor $(if ($Stats.ImagesMissing -gt 0) { "Yellow" } else { "White" })
+    Write-Host "║  PDFs Generated:       $($Stats.PDFsGenerated.ToString().PadLeft(10))                          ║" -ForegroundColor White
+    Write-Host "║  Emails Generated:     $($Stats.EmailsGenerated.ToString().PadLeft(10))                          ║" -ForegroundColor White
+    Write-Host "║                                                            ║" -ForegroundColor Cyan
 
-    Write-Information "║  ⏱️  PERFORMANCE METRICS                                   ║"
-    Write-Information "║  ─────────────────────────────────────────────────────    ║"
-    Write-Information "║  Processing Time:      $($Duration.ToString('mm\:ss').PadLeft(10))                          ║"
-    Write-Information "║  Start Time:           $(($Stats.StartTime.ToString('HH:mm:ss')).PadLeft(10))                          ║"
-    Write-Information "║  End Time:             $(($EndTime.ToString('HH:mm:ss')).PadLeft(10))                          ║"
-    Write-Information "║                                                            ║"
+    Write-Host "║  ⏱️  PERFORMANCE METRICS                                   ║" -ForegroundColor White
+    Write-Host "║  ─────────────────────────────────────────────────────    ║" -ForegroundColor Gray
+    Write-Host "║  Processing Time:      $($Duration.ToString('mm\:ss').PadLeft(10))                          ║" -ForegroundColor White
+    Write-Host "║  Start Time:           $(($Stats.StartTime.ToString('HH:mm:ss')).PadLeft(10))                          ║" -ForegroundColor White
+    Write-Host "║  End Time:             $(($EndTime.ToString('HH:mm:ss')).PadLeft(10))                          ║" -ForegroundColor White
+    Write-Host "║                                                            ║" -ForegroundColor Cyan
 
     $LotsWithImages = if ($Stats.TotalLots -gt 0 -and $Stats.ImagesMissing -ge 0) {
         $Stats.TotalLots - $Stats.ImagesMissing
@@ -912,8 +826,8 @@ function Show-Dashboard {
 
     $SuccessRate = [math]::Min($SuccessRate, 100)
 
-    Write-Information "║  📈 LOT IMAGE COVERAGE                                     ║"
-    Write-Information "║  ─────────────────────────────────────────────────────    ║"
+    Write-Host "║  📈 LOT IMAGE COVERAGE                                     ║" -ForegroundColor White
+    Write-Host "║  ─────────────────────────────────────────────────────    ║" -ForegroundColor Gray
 
     $BarLength = 40
     $FilledLength = [math]::Floor($SuccessRate / 100 * $BarLength)
@@ -921,39 +835,39 @@ function Show-Dashboard {
     $EmptyLength = $BarLength - $FilledLength
     $Bar = "█" * $FilledLength + "░" * $EmptyLength
 
-    Write-Information "║  [$Bar] $($SuccessRate.ToString('F2'))%  ║"-ge 80) { "Green" } elseif ($SuccessRate -ge 50) { "Yellow" } else { "Red" })
-    Write-Information "║  Lots with images: $LotsWithImages of $($Stats.TotalLots)                             ║"
+    Write-Host "║  [$Bar] $($SuccessRate.ToString('F2'))%  ║" -ForegroundColor $(if ($SuccessRate -ge 80) { "Green" } elseif ($SuccessRate -ge 50) { "Yellow" } else { "Red" })
+    Write-Host "║  Lots with images: $LotsWithImages of $($Stats.TotalLots)                             ║" -ForegroundColor White
 
     if ($Stats.ImagesFound -gt $Stats.TotalLots) {
         $avgImages = [math]::Round($Stats.ImagesFound / $LotsWithImages, 1)
-        Write-Information "║  Average images per lot: $($avgImages.ToString('F1'))                             ║"
+        Write-Host "║  Average images per lot: $($avgImages.ToString('F1'))                             ║" -ForegroundColor White
     }
 
-    Write-Information "║                                                            ║"
+    Write-Host "║                                                            ║" -ForegroundColor Cyan
 
-    Write-Information "║  📁 DATA SOURCES                                           ║"
-    Write-Information "║  ─────────────────────────────────────────────────────    ║"
+    Write-Host "║  📁 DATA SOURCES                                           ║" -ForegroundColor White
+    Write-Host "║  ─────────────────────────────────────────────────────    ║" -ForegroundColor Gray
     foreach ($Source in $Stats.DataSources) {
         $SourceName = Split-Path $Source -Leaf
         if ($SourceName.Length -gt 50) {
             $SourceName = $SourceName.Substring(0, 47) + "..."
         }
-        Write-Information "║  • $($SourceName.PadRight(54))  ║"
+        Write-Host "║  • $($SourceName.PadRight(54))  ║" -ForegroundColor Gray
     }
 
-    Write-Information "║                                                            ║"
-    Write-Information "╚════════════════════════════════════════════════════════════╝"
-    Write-Information ""
+    Write-Host "║                                                            ║" -ForegroundColor Cyan
+    Write-Host "╚════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+    Write-Host ""
 
     if ($Stats.ImagesMissing -gt 0) {
-        Write-Information "⚠️  WARNING: $($Stats.ImagesMissing) lots are missing images!"
-        Write-Information "   Check the image directory for missing .jpg files"
-        Write-Information ""
+        Write-Host "⚠️  WARNING: $($Stats.ImagesMissing) lots are missing images!" -ForegroundColor Yellow
+        Write-Host "   Check the image directory for missing .jpg files" -ForegroundColor Yellow
+        Write-Host ""
     }
 
-    Write-Information "✅ Processing Complete!"
-    Write-Information "   Logs saved to: $script:LogFile"
-    Write-Information ""
+    Write-Host "✅ Processing Complete!" -ForegroundColor Green
+    Write-Host "   Logs saved to: $script:LogFile" -ForegroundColor Cyan
+    Write-Host ""
 }
 
 function Export-ProcessingReport {
@@ -965,8 +879,6 @@ function Export-ProcessingReport {
         Company: Azure Innovators
         Create Date: 01/07/2025
         Version: 1.0.0
-        Change Date:
-        Change Purpose:
     #>
     param (
         [string]$OutputPath,
@@ -1055,9 +967,9 @@ try {
             $OutputDirectory = Join-Path $configDir "Output"
         }
 
-        Write-Information "Using directories based on config location:"
-        Write-Information "  Logs: $LogDirectory"
-        Write-Information "  Output: $OutputDirectory"
+        Write-Host "Using directories based on config location:" -ForegroundColor Cyan
+        Write-Host "  Logs: $LogDirectory" -ForegroundColor Gray
+        Write-Host "  Output: $OutputDirectory" -ForegroundColor Gray
     }
 
     Initialize-Logging -LogDir $LogDirectory
@@ -1098,9 +1010,9 @@ try {
 
             $PDFPath = Join-Path $OutputDirectory ("AuctionLots_" + (Get-Date -Format "yyyyMMdd_HHmmss") + ".pdf")
 
-            Write-Information "`n╔════════════════════════════════════════════════════════════╗"
-            Write-Information "║         PDF CONVERSION - DETAILED OUTPUT                  ║"
-            Write-Information "╚════════════════════════════════════════════════════════════╝`n"
+            Write-Host "`n╔════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+            Write-Host "║         PDF CONVERSION - DETAILED OUTPUT                  ║" -ForegroundColor Cyan
+            Write-Host "╚════════════════════════════════════════════════════════════╝`n" -ForegroundColor Cyan
 
             try {
                 # Don't use -Quiet so we can see all debugging output
@@ -1108,7 +1020,7 @@ try {
 
                 if ($PDFFilePath -and (Test-Path $PDFFilePath)) {
                     Write-JTLSLog "PDF created successfully: $(Split-Path $PDFFilePath -Leaf)" -Level "SUCCESS"
-                    Write-Information "`n✓ PDF saved to: $PDFFilePath"
+                    Write-Host "`n✓ PDF saved to: $PDFFilePath" -ForegroundColor Green
 
                     # Open the folder containing the PDF
                     $pdfFolder = Split-Path $PDFFilePath -Parent
@@ -1116,28 +1028,28 @@ try {
                 }
                 else {
                     Write-JTLSLog "Automatic PDF conversion failed, using HTML report" -Level "WARNING"
-                    Write-Information "`n⚠️  PDF conversion did not produce a file"
-                    Write-Information "   Using HTML report instead: $ImageReportPath"
+                    Write-Host "`n⚠️  PDF conversion did not produce a file" -ForegroundColor Yellow
+                    Write-Host "   Using HTML report instead: $ImageReportPath" -ForegroundColor Yellow
                     $PDFFilePath = $ImageReportPath
                 }
             }
             catch {
                 Write-JTLSLog "Error during PDF conversion: $_" -Level "ERROR"
                 Write-JTLSLog "Falling back to HTML report" -Level "WARNING"
-                Write-Information "`n✗ Error: $_"
+                Write-Host "`n✗ Error: $_" -ForegroundColor Red
                 $PDFFilePath = $ImageReportPath
             }
         }
         else {
             Write-JTLSLog "PDF helper not available, using HTML report" -Level "WARNING"
-            Write-Information "`n" + ("=" * 70)
-            Write-Information "MANUAL PDF CREATION:"
-            Write-Information ("=" * 70)
-            Write-Information "1. HTML report opened in your browser"
-            Write-Information "2. Press Ctrl+P to print"
-            Write-Information "3. Select 'Save as PDF' or your Foxit PDF Printer"
-            Write-Information "4. Save to Output folder"
-            Write-Information ("=" * 70) + "`n"
+            Write-Host "`n" + ("=" * 70) -ForegroundColor Cyan
+            Write-Host "MANUAL PDF CREATION:" -ForegroundColor Yellow
+            Write-Host ("=" * 70) -ForegroundColor Cyan
+            Write-Host "1. HTML report opened in your browser" -ForegroundColor White
+            Write-Host "2. Press Ctrl+P to print" -ForegroundColor White
+            Write-Host "3. Select 'Save as PDF' or your Foxit PDF Printer" -ForegroundColor White
+            Write-Host "4. Save to Output folder" -ForegroundColor White
+            Write-Host ("=" * 70) + "`n" -ForegroundColor Cyan
             $PDFFilePath = $ImageReportPath
         }
     }
@@ -1166,10 +1078,10 @@ try {
     $HTMLFilePath = Join-Path $OutputDirAbsolute ("LogisticsEmail_" + (Get-Date -Format "yyyyMMdd_HHmmss") + ".html")
     $EmailHTML | Out-File -FilePath $HTMLFilePath -Encoding UTF8
     Write-JTLSLog "HTML email saved to: $HTMLFilePath" -Level "SUCCESS"
-    Write-Information "`n================================================"
-    Write-Information "EMAIL FILE LOCATION:"
-    Write-Information $HTMLFilePath
-    Write-Information "================================================`n"
+    Write-Host "`n================================================" -ForegroundColor Cyan
+    Write-Host "EMAIL FILE LOCATION:" -ForegroundColor Yellow
+    Write-Host $HTMLFilePath -ForegroundColor Green
+    Write-Host "================================================`n" -ForegroundColor Cyan
 
     # Prepare attachments
     $AttachmentList = @()
@@ -1237,6 +1149,3 @@ finally {
     Write-JTLSLog "Total execution time: $((Get-Date) - $script:ProcessingStats.StartTime)" -Level "INFO"
 }
 #endregion
-
-
-

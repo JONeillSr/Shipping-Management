@@ -1,0 +1,17 @@
+[2025-10-21 19:17:18] [INFO] === Logistics Email Automation Started ===
+[2025-10-21 19:17:18] [INFO] Script Version: 1.5.5
+[2025-10-21 19:17:18] [INFO] User: JohnO'NeillSr
+[2025-10-21 19:17:18] [INFO] Machine: ITSAMURAI
+[2025-10-21 19:17:18] [INFO] PDF Helper Available: True
+[2025-10-21 19:17:18] [INFO] Created output directory: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Party City Auction 10-2025\Logistics
+[2025-10-21 19:17:18] [INFO] Starting data import process
+[2025-10-21 19:17:18] [INFO] Importing CSV data from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Party City Auction 10-2025\PurchaseTracking.csv
+[2025-10-21 19:17:18] [SUCCESS] Successfully imported 0 lots
+[2025-10-21 19:17:18] [ERROR] Failed to import CSV: Cannot index into a null array.
+[2025-10-21 19:17:18] [ERROR] Fatal error: Cannot index into a null array.
+[2025-10-21 19:17:19] [ERROR] Stack Trace: at <ScriptBlock>, C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Generate-LogisticsEmail.ps1: line 295
+at Import-AuctionData, C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Generate-LogisticsEmail.ps1: line 295
+at <ScriptBlock>, C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Generate-LogisticsEmail.ps1: line 993
+at <ScriptBlock>, <No file>: line 1
+[2025-10-21 19:17:19] [INFO] Script execution completed
+[2025-10-21 19:17:19] [INFO] Total execution time: 00:00:00.4501732
