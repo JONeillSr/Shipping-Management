@@ -3,28 +3,26 @@
   "email_subject": "Freight Quote Request - [Location] to Ashtabula, OH - Pickup [Date]",
   "delivery_address": "1214 Lake Avenue, Ashtabula, OH 44004",
   "auction_info": {
-    "auction_name": "[Auction Company Name]",
+    "auction_name": "Commercial_Industrial_Auctioneers",
     "pickup_address": "[To be filled from invoice]",
     "pickup_datetime": "[Specify pickup date/time]",
-    "pickup_requirements": "Appointment is required. Driver must bring invoice showing paddle #.",
+    "pickup_requirements": "HOURS= MONDAY-TUESDAY 8AM TO 5:30PM PDT, WEDNESDAY-FRIDAY 8AM TO 4:30 PM PDT. Driver must bring invoice showing paddle #.",
     "delivery_datetime": "[Specify delivery window] between 8:00am and 6:00pm EDT BY APPOINTMENT",
     "delivery_requirements": "[If any: e.g., Truck must be able to unload to ground; no onsite equipment.]",
     "delivery_notes": "Driver must call at least one hour prior to delivery. Dock is in the rear of the complex. Driver must pull around the building. Our dock has a sign reading “JT Custom Trailers”",
     "logistics_contact": {
-      "name": "[Contact Name]",
-      "phone": "[Contact phone]",
-      "email": "[Contact email]"
+      "name": "Kym Zamudio",
+      "phone": "(503) 760-0499",
+      "email": "kym@ciauctions.com"
     },
     "special_notes": [
-      "Delivery location has dock with pallet jacks only",
-      "Trucks must back up to dock for unloading",
       "Total weight will NOT exceed standard truck capacity"
     ]
   },
   "shipping_requirements": {
     "truck_types": "TBD - Please recommend based on items",
-    "weight_notes": "Total weight will NOT exceed standard truck capacity",
+    "labor_needed": "None required for loading at pickup location",
     "total_pallets": "TBD",
-    "labor_needed": "TBD based on requirements"
+    "weight_notes": "Total weight unknown but will NOT exceed 10,000 lbs"
   }
 }

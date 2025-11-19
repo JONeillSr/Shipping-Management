@@ -1,0 +1,51 @@
+[2025-11-12 12:05:47] [INFO] === Logistics Email Automation Started ===
+[2025-11-12 12:05:47] [INFO] Script Version: 1.5.5
+[2025-11-12 12:05:47] [INFO] User: JohnO'NeillSr
+[2025-11-12 12:05:47] [INFO] Machine: ITSAMURAI
+[2025-11-12 12:05:47] [INFO] PDF Helper Available: True
+[2025-11-12 12:05:47] [INFO] Created output directory: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\DRV Luxury Suites RV 11-2025\Logistics
+[2025-11-12 12:05:47] [INFO] Loading configuration from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Templates\Brolyn_Auctions.json
+[2025-11-12 12:05:47] [SUCCESS] Configuration loaded successfully
+[2025-11-12 12:05:47] [SUCCESS] Using configuration from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Templates\Brolyn_Auctions.json
+[2025-11-12 12:05:47] [INFO] Starting data import process
+[2025-11-12 12:05:47] [INFO] Importing CSV data from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\DRV Luxury Suites RV 11-2025\PurchaseTracking_brolyn10248.csv
+[2025-11-12 12:05:47] [SUCCESS] Successfully imported 6 lots
+[2025-11-12 12:05:47] [INFO] Processing lot images (max 3 per lot)
+[2025-11-12 12:05:47] [DEBUG] Lot 7: Found 5 images, including 3 (max: 3)
+[2025-11-12 12:05:47] [DEBUG]   Selected: 7.jpg, 7-2.jpg, 7-3.jpg
+[2025-11-12 12:05:47] [INFO] Lot 7 has 5 images, selected: Primary, Image2, Image3
+[2025-11-12 12:05:47] [DEBUG] Lot 20: Found 4 images, including 3 (max: 3)
+[2025-11-12 12:05:47] [DEBUG]   Selected: 20.jpg, 20-2.jpg, 20-3.jpg
+[2025-11-12 12:05:47] [INFO] Lot 20 has 4 images, selected: Primary, Image2, Image3
+[2025-11-12 12:05:47] [DEBUG] Lot 127: Found 7 images, including 3 (max: 3)
+[2025-11-12 12:05:47] [DEBUG]   Selected: 127.jpg, 127-2.jpg, 127-3.jpg
+[2025-11-12 12:05:47] [INFO] Lot 127 has 7 images, selected: Primary, Image2, Image3
+[2025-11-12 12:05:47] [DEBUG] Lot 148: Found 8 images, including 3 (max: 3)
+[2025-11-12 12:05:47] [DEBUG]   Selected: 148.jpg, 148-2.jpg, 148-3.jpg
+[2025-11-12 12:05:47] [INFO] Lot 148 has 8 images, selected: Primary, Image2, Image3
+[2025-11-12 12:05:47] [DEBUG] Lot 150: Found 7 images, including 3 (max: 3)
+[2025-11-12 12:05:47] [DEBUG]   Selected: 150.jpg, 150-2.jpg, 150-3.jpg
+[2025-11-12 12:05:47] [INFO] Lot 150 has 7 images, selected: Primary, Image2, Image3
+[2025-11-12 12:05:47] [DEBUG] Lot 152: Found 4 images, including 3 (max: 3)
+[2025-11-12 12:05:47] [DEBUG]   Selected: 152.jpg, 152-2.jpg, 152-3.jpg
+[2025-11-12 12:05:47] [INFO] Lot 152 has 4 images, selected: Primary, Image2, Image3
+[2025-11-12 12:05:47] [INFO] Including 18 of 35 total images found
+[2025-11-12 12:05:48] [INFO] Generating HTML image report
+[2025-11-12 12:05:48] [INFO] Generating image report for 6 lots with 18 total images
+[2025-11-12 12:05:48] [SUCCESS] Image report generated successfully: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\DRV Luxury Suites RV 11-2025\Logistics\AuctionLots_20251112_120548.html
+[2025-11-12 12:05:48] [INFO]   Lots: 6
+[2025-11-12 12:05:48] [INFO]   Images: 18
+[2025-11-12 12:05:48] [INFO] Attempting automatic PDF conversion...
+[2025-11-12 12:05:58] [WARNING] Automatic PDF conversion failed, using HTML report
+[2025-11-12 12:05:58] [INFO] Generating HTML email with config data
+[2025-11-12 12:05:58] [INFO] Generating HTML email for 6 lots
+[2025-11-12 12:05:58] [SUCCESS] HTML email generated successfully
+[2025-11-12 12:05:58] [SUCCESS] HTML email saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\DRV Luxury Suites RV 11-2025\Logistics\LogisticsEmail_20251112_120558.html
+[2025-11-12 12:05:58] [INFO] Creating Outlook draft email
+[2025-11-12 12:05:58] [DEBUG] Added attachment: AuctionLots_20251112_120548.html
+[2025-11-12 12:05:59] [SUCCESS] Outlook draft email created successfully
+[2025-11-12 12:05:59] [SUCCESS] Processing report exported to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\DRV Luxury Suites RV 11-2025\Logistics\ProcessingReport_20251112_120559.html
+[2025-11-12 12:05:59] [SUCCESS] === Logistics Email Automation Completed Successfully ===
+[2025-11-12 12:05:59] [INFO] Output files saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\DRV Luxury Suites RV 11-2025\Logistics
+[2025-11-12 12:05:59] [INFO] Script execution completed
+[2025-11-12 12:05:59] [INFO] Total execution time: 00:00:12.5649481

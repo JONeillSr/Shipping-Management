@@ -1,0 +1,85 @@
+[2025-10-29 09:36:19] [INFO] === Logistics Email Automation Started ===
+[2025-10-29 09:36:19] [INFO] Script Version: 1.5.5
+[2025-10-29 09:36:19] [INFO] User: JohnO'NeillSr
+[2025-10-29 09:36:19] [INFO] Machine: ITSAMURAI
+[2025-10-29 09:36:19] [INFO] PDF Helper Available: True
+[2025-10-29 09:36:19] [INFO] Loading configuration from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Templates\Commercial_Industrial_Auctioneers.json
+[2025-10-29 09:36:19] [SUCCESS] Configuration loaded successfully
+[2025-10-29 09:36:19] [SUCCESS] Using configuration from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Templates\Commercial_Industrial_Auctioneers.json
+[2025-10-29 09:36:19] [INFO] Starting data import process
+[2025-10-29 09:36:19] [INFO] Importing CSV data from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Commercial and Industrial Auctioneers\October 26th Online Public Auction 10-2025\PurchaseTracking_commer10012.csv
+[2025-10-29 09:36:20] [SUCCESS] Successfully imported 24 lots
+[2025-10-29 09:36:20] [INFO] Processing lot images (max 3 per lot)
+[2025-10-29 09:36:20] [DEBUG] Lot 23: Found 4 images, including 3 (max: 3)
+[2025-10-29 09:36:20] [DEBUG]   Selected: 23.jpg, 23-2.jpg, 23-3.jpg
+[2025-10-29 09:36:20] [INFO] Lot 23 has 4 images, selected: Primary, Image2, Image3
+[2025-10-29 09:36:20] [DEBUG] Lot 140: Found 13 images, including 3 (max: 3)
+[2025-10-29 09:36:20] [DEBUG]   Selected: 140.jpg, 140-2.jpg, 140-3.jpg
+[2025-10-29 09:36:20] [INFO] Lot 140 has 13 images, selected: Primary, Image2, Image3
+[2025-10-29 09:36:20] [DEBUG] Lot 143: Found 13 images, including 3 (max: 3)
+[2025-10-29 09:36:20] [DEBUG]   Selected: 143.jpg, 143-2.jpg, 143-3.jpg
+[2025-10-29 09:36:20] [INFO] Lot 143 has 13 images, selected: Primary, Image2, Image3
+[2025-10-29 09:36:20] [DEBUG] Lot 431: Found 4 images, including 3 (max: 3)
+[2025-10-29 09:36:20] [DEBUG]   Selected: 431.jpg, 431-2.jpg, 431-3.jpg
+[2025-10-29 09:36:20] [INFO] Lot 431 has 4 images, selected: Primary, Image2, Image3
+[2025-10-29 09:36:20] [DEBUG] Lot 468: Found 4 images, including 3 (max: 3)
+[2025-10-29 09:36:20] [DEBUG]   Selected: 468.jpg, 468-2.jpg, 468-3.jpg
+[2025-10-29 09:36:20] [INFO] Lot 468 has 4 images, selected: Primary, Image2, Image3
+[2025-10-29 09:36:20] [DEBUG] Lot 517: Found 5 images, including 3 (max: 3)
+[2025-10-29 09:36:20] [DEBUG]   Selected: 517.jpg, 517-2.jpg, 517-3.jpg
+[2025-10-29 09:36:20] [INFO] Lot 517 has 5 images, selected: Primary, Image2, Image3
+[2025-10-29 09:36:20] [DEBUG] Lot 1036: Found 3 images, including 3 (max: 3)
+[2025-10-29 09:36:20] [DEBUG]   Selected: 1036.jpg, 1036-2.jpg, 1036-3.jpg
+[2025-10-29 09:36:20] [DEBUG] Lot 1214: Found 6 images, including 3 (max: 3)
+[2025-10-29 09:36:20] [DEBUG]   Selected: 1214.jpg, 1214-2.jpg, 1214-3.jpg
+[2025-10-29 09:36:20] [INFO] Lot 1214 has 6 images, selected: Primary, Image2, Image3
+[2025-10-29 09:36:20] [DEBUG] Lot 1361: Found 3 images, including 3 (max: 3)
+[2025-10-29 09:36:20] [DEBUG]   Selected: 1361.jpg, 1361-2.jpg, 1361-3.jpg
+[2025-10-29 09:36:20] [DEBUG] Lot 1363: Found 4 images, including 3 (max: 3)
+[2025-10-29 09:36:20] [DEBUG]   Selected: 1363.jpg, 1363-2.jpg, 1363-3.jpg
+[2025-10-29 09:36:20] [INFO] Lot 1363 has 4 images, selected: Primary, Image2, Image3
+[2025-10-29 09:36:20] [DEBUG] Lot 1429: Found 3 images, including 3 (max: 3)
+[2025-10-29 09:36:20] [DEBUG]   Selected: 1429.jpg, 1429-2.jpg, 1429-3.jpg
+[2025-10-29 09:36:20] [DEBUG] Lot 1459: Found 2 images, including 2 (max: 3)
+[2025-10-29 09:36:20] [DEBUG]   Selected: 1459.jpg, 1459-2.jpg
+[2025-10-29 09:36:21] [DEBUG] Lot 1471: Found 4 images, including 3 (max: 3)
+[2025-10-29 09:36:21] [DEBUG]   Selected: 1471.jpg, 1471-2.jpg, 1471-3.jpg
+[2025-10-29 09:36:21] [INFO] Lot 1471 has 4 images, selected: Primary, Image2, Image3
+[2025-10-29 09:36:21] [DEBUG] Lot 1478: Found 3 images, including 3 (max: 3)
+[2025-10-29 09:36:21] [DEBUG]   Selected: 1478.jpg, 1478-2.jpg, 1478-3.jpg
+[2025-10-29 09:36:21] [DEBUG] Lot 1500: Found 2 images, including 2 (max: 3)
+[2025-10-29 09:36:21] [DEBUG]   Selected: 1500.jpg, 1500-2.jpg
+[2025-10-29 09:36:21] [DEBUG] Lot 1592: Found 4 images, including 3 (max: 3)
+[2025-10-29 09:36:21] [DEBUG]   Selected: 1592.jpg, 1592-2.jpg, 1592-3.jpg
+[2025-10-29 09:36:21] [INFO] Lot 1592 has 4 images, selected: Primary, Image2, Image3
+[2025-10-29 09:36:21] [DEBUG] Lot 1600: Found 4 images, including 3 (max: 3)
+[2025-10-29 09:36:21] [DEBUG]   Selected: 1600.jpg, 1600-2.jpg, 1600-3.jpg
+[2025-10-29 09:36:21] [INFO] Lot 1600 has 4 images, selected: Primary, Image2, Image3
+[2025-10-29 09:36:21] [DEBUG] Lot 1841: Found 4 images, including 3 (max: 3)
+[2025-10-29 09:36:21] [DEBUG]   Selected: 1841.jpg, 1841-2.jpg, 1841-3.jpg
+[2025-10-29 09:36:21] [INFO] Lot 1841 has 4 images, selected: Primary, Image2, Image3
+[2025-10-29 09:36:21] [WARNING] No images found for Lot 
+[2025-10-29 09:36:21] [WARNING] No images found for Lot 
+[2025-10-29 09:36:21] [WARNING] No images found for Lot 
+[2025-10-29 09:36:21] [WARNING] No images found for Lot 
+[2025-10-29 09:36:21] [WARNING] No images found for Lot 
+[2025-10-29 09:36:21] [WARNING] No images found for Lot 
+[2025-10-29 09:36:21] [INFO] Including 52 of 85 total images found
+[2025-10-29 09:36:21] [INFO] Generating HTML image report
+[2025-10-29 09:36:21] [INFO] Generating image report for 18 lots with 52 total images
+[2025-10-29 09:36:22] [SUCCESS] Image report generated successfully: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Commercial and Industrial Auctioneers\October 26th Online Public Auction 10-2025\Logistics\AuctionLots_20251029_093621.html
+[2025-10-29 09:36:22] [INFO]   Lots: 18
+[2025-10-29 09:36:22] [INFO]   Images: 52
+[2025-10-29 09:36:23] [INFO] Attempting automatic PDF conversion...
+[2025-10-29 09:36:56] [SUCCESS] PDF created successfully: AuctionLots_20251029_093623.pdf
+[2025-10-29 09:36:56] [INFO] Generating HTML email with config data
+[2025-10-29 09:36:56] [INFO] Generating HTML email for 24 lots
+[2025-10-29 09:36:56] [SUCCESS] HTML email generated successfully
+[2025-10-29 09:36:56] [SUCCESS] HTML email saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Commercial and Industrial Auctioneers\October 26th Online Public Auction 10-2025\Logistics\LogisticsEmail_20251029_093656.html
+[2025-10-29 09:36:56] [INFO] Outlook draft creation skipped (use -CreateOutlookDraft to enable)
+[2025-10-29 09:36:57] [INFO] Opening HTML in default browser
+[2025-10-29 09:36:57] [SUCCESS] Processing report exported to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Commercial and Industrial Auctioneers\October 26th Online Public Auction 10-2025\Logistics\ProcessingReport_20251029_093657.html
+[2025-10-29 09:36:57] [SUCCESS] === Logistics Email Automation Completed Successfully ===
+[2025-10-29 09:36:57] [INFO] Output files saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Commercial and Industrial Auctioneers\October 26th Online Public Auction 10-2025\Logistics
+[2025-10-29 09:36:57] [INFO] Script execution completed
+[2025-10-29 09:36:57] [INFO] Total execution time: 00:00:37.3780100

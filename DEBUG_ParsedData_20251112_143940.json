@@ -1,0 +1,44 @@
+[
+  "\n📊 Extracting invoice data...",
+  "   💳 Selection: Cash",
+  "   💰 Subtotal: 3,020.80",
+  "   💵 Cash Total Due: 3,020.80",
+  "   ✅ Using Total: 3,020.80",
+  {
+    "Vendor": "Brolyn Auctions",
+    "InvoiceNumber": "5014-306211-1",
+    "InvoiceDate": "06-Nov-2025 02:39",
+    "ContactInfo": {
+      "Phone": [
+        "(574) 891-3111",
+        "(440) 813-4765"
+      ],
+      "Email": [
+        "logistics@brolynauctions.com"
+      ]
+    },
+    "PickupAddresses": [
+      {
+        "Street": "160 West 750 North",
+        "Address2": "Plant 203 DRV",
+        "City": "Howe",
+        "State": "IN",
+        "Zip": "46746",
+        "OneLine": "160 West 750 North, Howe IN 46746"
+      }
+    ],
+    "PickupDates": [],
+    "Items": null,
+    "Totals": {
+      "Subtotal": 3020.8,
+      "Tax": null,
+      "Premium": null,
+      "Total": 3020.8,
+      "CashTotal": 3020.8,
+      "CreditTotal": null,
+      "ConvenienceFee": null,
+      "GrandTotal": null
+    },
+    "SpecialNotes": []
+  }
+]

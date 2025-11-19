@@ -1,0 +1,16 @@
+[2025-11-12 13:09:46] [INFO] === Logistics Email Automation Started ===
+[2025-11-12 13:09:46] [INFO] Script Version: 1.8.0
+[2025-11-12 13:09:46] [INFO] User: JohnO'NeillSr
+[2025-11-12 13:09:46] [INFO] Machine: ITSAMURAI
+[2025-11-12 13:09:46] [INFO] Loading configuration from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Templates\Brolyn_Auctions.json
+[2025-11-12 13:09:46] [SUCCESS] Using configuration from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Templates\Brolyn_Auctions.json
+[2025-11-12 13:09:46] [INFO] Starting data import process
+[2025-11-12 13:09:47] [INFO] Importing CSV data from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\DRV Luxury Suites RV 11-2025\PurchaseTracking_brolyn10248.csv
+[2025-11-12 13:09:47] [SUCCESS] Successfully imported 6 lots
+[2025-11-12 13:09:47] [INFO] Processing lot images (max 3 per lot)
+[2025-11-12 13:09:47] [INFO] Including 18 of 35 total images found
+[2025-11-12 13:09:47] [INFO] Generating HTML image report
+[2025-11-12 13:09:47] [INFO] Generating image report for 6 lots with 18 total images
+[2025-11-12 13:09:47] [SUCCESS] Image report generated: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\DRV Luxury Suites RV 11-2025\Logistics\AuctionLots_20251112_130947.html
+[2025-11-12 13:15:38] [INFO] Script execution completed
+[2025-11-12 13:15:38] [INFO] Total execution time: 00:05:51.6111924

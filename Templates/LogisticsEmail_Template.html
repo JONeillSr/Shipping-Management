@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Logistics Quote Request</title>
+  <style>
+    body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #000000; max-width: 720px; margin: 20px; }
+    p { margin: 7.5pt 0; }
+    ul { margin: 0 0 0 58.5pt; padding: 0; }
+    li { margin: 3.75pt 0; }
+    a { color: #467886; }
+    a:visited { color: #96607D; }
+    .label { color: #2C3E50; font-weight: bold; }
+    .u { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <p>Hi,</p>
+
+  <p>We have an online auction that's closed with {{LOT_COUNT}} lots we won to pick up. Here is the information:</p>
+
+  <p><span class="label">PICKUP ADDRESS:</span> {{PICKUP_ADDRESS}}</p>
+
+  <p><span class="label">DELIVERY ADDRESS:</span> {{DELIVERY_ADDRESS}}</p>
+
+  <p><span class="label">AUCTION LOGISTICS CONTACT:</span> <span class="label">{{CONTACT_NAME}}</span><br>
+     Phone: {{CONTACT_PHONE}}<br>
+     Email: <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a></p>
+
+  <p><span class="label">PICKUP DATE/TIME:</span> {{PICKUP_DATETIME}}<br>
+     <span class="label">PICKUP REQUIREMENTS:</span> <span class="u">{{PICKUP_REQUIREMENTS}}</span></p>
+
+  <p><span class="label">DELIVERY DATE/TIME:</span> {{DELIVERY_DATETIME}}<br>
+     <span class="label">DELIVERY REQUIREMENTS:</span> <span class="u">{{DELIVERY_REQUIREMENTS}}</span><br>
+     <b>DELIVERY NOTES FOR DRIVER:</b> {{DELIVERY_NOTES}}</p>
+
+  <p>The items (pictures in the attached PDF referenced by Lot Number) are:</p>
+
+  <ul>
+    {{ITEMS_HTML}}
+  </ul>
+
+  <p>Please send me a quote at your earliest opportunity.</p>
+
+  <p>Thank you.</p>
+
+  <p>John O'Neill Sr.<br>
+     AWS Solutions LLC dba JT Custom Trailers<br>
+     (440) 813-6695</p>
+</body>
+</html>

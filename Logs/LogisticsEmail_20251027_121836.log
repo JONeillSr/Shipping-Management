@@ -1,0 +1,34 @@
+[2025-10-27 12:18:36] [INFO] === Logistics Email Automation Started ===
+[2025-10-27 12:18:36] [INFO] Script Version: 1.5.5
+[2025-10-27 12:18:36] [INFO] User: JohnO'NeillSr
+[2025-10-27 12:18:36] [INFO] Machine: ITSAMURAI
+[2025-10-27 12:18:36] [INFO] PDF Helper Available: True
+[2025-10-27 12:18:36] [INFO] Starting data import process
+[2025-10-27 12:18:36] [INFO] Importing CSV data from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Danfoss 10-2025\PurchaseTracking_hollan10118.csv
+[2025-10-27 12:18:36] [SUCCESS] Successfully imported 2 lots
+[2025-10-27 12:18:36] [INFO] Processing lot images (max 3 per lot)
+[2025-10-27 12:18:36] [DEBUG] Lot 39: Found 8 images, including 3 (max: 3)
+[2025-10-27 12:18:36] [DEBUG]   Selected: 39.jpg, 39-2.jpg, 39-3.jpg
+[2025-10-27 12:18:36] [INFO] Lot 39 has 8 images, selected: Primary, Image2, Image3
+[2025-10-27 12:18:36] [DEBUG] Lot 43: Found 6 images, including 3 (max: 3)
+[2025-10-27 12:18:36] [DEBUG]   Selected: 43.jpg, 43-2.jpg, 43-3.jpg
+[2025-10-27 12:18:36] [INFO] Lot 43 has 6 images, selected: Primary, Image2, Image3
+[2025-10-27 12:18:36] [INFO] Including 6 of 14 total images found
+[2025-10-27 12:18:36] [INFO] Generating HTML image report
+[2025-10-27 12:18:36] [INFO] Generating image report for 2 lots with 6 total images
+[2025-10-27 12:18:36] [SUCCESS] Image report generated successfully: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Danfoss 10-2025\Logistics\AuctionLots_20251027_121836.html
+[2025-10-27 12:18:36] [INFO]   Lots: 2
+[2025-10-27 12:18:36] [INFO]   Images: 6
+[2025-10-27 12:18:37] [INFO] Attempting automatic PDF conversion...
+[2025-10-27 12:19:02] [SUCCESS] PDF created successfully: AuctionLots_20251027_121837.pdf
+[2025-10-27 12:19:02] [INFO] Generating HTML email with config data
+[2025-10-27 12:19:02] [INFO] Generating HTML email for 2 lots
+[2025-10-27 12:19:02] [SUCCESS] HTML email generated successfully
+[2025-10-27 12:19:02] [SUCCESS] HTML email saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Danfoss 10-2025\Logistics\LogisticsEmail_20251027_121902.html
+[2025-10-27 12:19:02] [INFO] Outlook draft creation skipped (use -CreateOutlookDraft to enable)
+[2025-10-27 12:19:02] [INFO] Opening HTML in default browser
+[2025-10-27 12:19:02] [SUCCESS] Processing report exported to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Danfoss 10-2025\Logistics\ProcessingReport_20251027_121902.html
+[2025-10-27 12:19:02] [SUCCESS] === Logistics Email Automation Completed Successfully ===
+[2025-10-27 12:19:02] [INFO] Output files saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Danfoss 10-2025\Logistics
+[2025-10-27 12:19:02] [INFO] Script execution completed
+[2025-10-27 12:19:02] [INFO] Total execution time: 00:00:26.0969317

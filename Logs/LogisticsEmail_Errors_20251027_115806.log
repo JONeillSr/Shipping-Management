@@ -1,0 +1,5 @@
+[2025-10-27 11:58:07] [ERROR] Failed to import CSV: Missing required columns: Lot, Description
+[2025-10-27 11:58:07] [ERROR] Fatal error: Missing required columns: Lot, Description
+[2025-10-27 11:58:07] [ERROR] Stack Trace: at Import-AuctionData, C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Generate-LogisticsEmail.ps1: line 298
+at <ScriptBlock>, C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Generate-LogisticsEmail.ps1: line 993
+at <ScriptBlock>, <No file>: line 1

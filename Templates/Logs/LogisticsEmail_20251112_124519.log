@@ -1,0 +1,26 @@
+[2025-11-12 12:45:19] [INFO] === Logistics Email Automation Started ===
+[2025-11-12 12:45:19] [INFO] Script Version: 1.8.0
+[2025-11-12 12:45:19] [INFO] User: JohnO'NeillSr
+[2025-11-12 12:45:19] [INFO] Machine: ITSAMURAI
+[2025-11-12 12:45:19] [INFO] Loading configuration from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Templates\Brolyn_Auctions.json
+[2025-11-12 12:45:19] [SUCCESS] Using configuration from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Templates\Brolyn_Auctions.json
+[2025-11-12 12:45:19] [INFO] Starting data import process
+[2025-11-12 12:45:19] [INFO] Importing CSV data from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\DRV Luxury Suites RV 11-2025\PurchaseTracking_brolyn10248.csv
+[2025-11-12 12:45:19] [SUCCESS] Successfully imported 6 lots
+[2025-11-12 12:45:19] [INFO] Processing lot images (max 3 per lot)
+[2025-11-12 12:45:19] [INFO] Including 18 of 35 total images found
+[2025-11-12 12:45:19] [INFO] Generating HTML image report
+[2025-11-12 12:45:19] [INFO] Generating image report for 6 lots with 18 total images
+[2025-11-12 12:45:19] [SUCCESS] Image report generated: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\DRV Luxury Suites RV 11-2025\Logistics\AuctionLots_20251112_124519.html
+[2025-11-12 12:45:23] [ERROR] Error during PDF conversion: No HTML→PDF method succeeded. Tried Edge, Chrome, wkhtmltopdf, LibreOffice.
+[2025-11-12 12:45:23] [WARNING] Falling back to HTML report
+[2025-11-12 12:45:23] [INFO] Generating HTML email with config data
+[2025-11-12 12:45:23] [SUCCESS] HTML email saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\DRV Luxury Suites RV 11-2025\Logistics\LogisticsEmail_20251112_124523.html
+[2025-11-12 12:45:23] [INFO] Creating Outlook draft email
+[2025-11-12 12:45:23] [DEBUG] Added attachment: AuctionLots_20251112_124519.html
+[2025-11-12 12:45:23] [SUCCESS] Outlook draft email created successfully
+[2025-11-12 12:45:24] [SUCCESS] Processing report exported to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\DRV Luxury Suites RV 11-2025\Logistics\ProcessingReport_20251112_124524.html
+[2025-11-12 12:45:24] [SUCCESS] === Logistics Email Automation Completed Successfully ===
+[2025-11-12 12:45:24] [INFO] Output files saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\DRV Luxury Suites RV 11-2025\Logistics
+[2025-11-12 12:45:24] [INFO] Script execution completed
+[2025-11-12 12:45:24] [INFO] Total execution time: 00:00:04.5480501

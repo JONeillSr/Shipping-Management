@@ -1,0 +1,20 @@
+[2025-11-11 21:06:53] [INFO] === Logistics Email Automation Started ===
+[2025-11-11 21:06:53] [INFO] Script Version: 1.5.5
+[2025-11-11 21:06:53] [INFO] User: JohnO'NeillSr
+[2025-11-11 21:06:53] [INFO] Machine: ITSAMURAI
+[2025-11-11 21:06:53] [INFO] PDF Helper Available: True
+[2025-11-11 21:06:53] [INFO] Created output directory: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\DRV Luxury Suites RV 11-2025\Plant 203\Logistics
+[2025-11-11 21:06:53] [INFO] Loading configuration from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Templates\Brolyn_Auctions.json
+[2025-11-11 21:06:53] [SUCCESS] Configuration loaded successfully
+[2025-11-11 21:06:53] [SUCCESS] Using configuration from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Templates\Brolyn_Auctions.json
+[2025-11-11 21:06:53] [INFO] Starting data import process
+[2025-11-11 21:06:53] [INFO] Importing CSV data from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\DRV Luxury Suites RV 11-2025\Plant 203\PurchaseTracking_brolyn10248
+[2025-11-11 21:06:53] [SUCCESS] Successfully imported 0 lots
+[2025-11-11 21:06:53] [ERROR] Failed to import CSV: Cannot index into a null array.
+[2025-11-11 21:06:53] [ERROR] Fatal error: Cannot index into a null array.
+[2025-11-11 21:06:53] [ERROR] Stack Trace: at <ScriptBlock>, C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Generate-LogisticsEmail.ps1: line 306
+at Import-AuctionData, C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Generate-LogisticsEmail.ps1: line 306
+at <ScriptBlock>, C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Generate-LogisticsEmail.ps1: line 1004
+at <ScriptBlock>, <No file>: line 1
+[2025-11-11 21:06:53] [INFO] Script execution completed
+[2025-11-11 21:06:53] [INFO] Total execution time: 00:00:00.3888747

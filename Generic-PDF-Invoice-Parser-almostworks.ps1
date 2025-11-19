@@ -211,11 +211,11 @@ function Test-PdfToTextBBoxAvailable {
     if (-not $cmd) { return $false }
     try {
         # Xpdf pdftotext returns usage on bad args; just test it exists
-        $null = & pdftotext -v 2>$null
+        $v = & pdftotext -v 2>$null
         return $true
     } catch { return $false }
 }
-function Get-PDFWordBox {
+function Get-PDFWordBoxes {
     [CmdletBinding()]
     [OutputType([object[]])]
     param(
@@ -552,7 +552,7 @@ function Get-CommercialIndustrialAuctioneersInvoiceItem {
     $lotRow = '^\s*(?<lot>\d{1,5}[A-Z]?)\s+(?<mid>.*?)(?:\s+(?:N|Tax))?\s+(?<price>\d{1,3}(?:,\d{3})*\.\d{2})\s*$'
     $lotOnly = '^\s*(?<lot>\d{1,5}[A-Z]?)\s*$'
 
-    function Test-NoiseLine([string]$s) {
+    function Is-Noise([string]$s) {
         return ($s -match '^(?i)(Lot\s+Description|RECEIPT OF PURCHASE|Purchases\b|Buyer.?s?\s*Premium|Sub-?Total|Amount\s+Paid|Balance\s+Due|THANK YOU FOR ATTENDING|PLEASE VISIT|W\s*W\s*W|Payment\s*-|^\*+\s*C\s*O\s*N\s*T|All Purchases Must be Removed|^Page\s*\d+|^Date\b|^Duplicate Inv#|COMMERCIAL INDUSTRIAL AUCTIONEERS|^PO BOX|^PORTLAND|^Phone|AWS SOLUTIONS|^Tax Status|This is NOT an Invoice|^Copy\b|NO CASH DISCOUNT|NO WEEKEND|HOURS=|OUR NEXT AUCTION)')
     }
 
@@ -576,7 +576,7 @@ function Get-CommercialIndustrialAuctioneersInvoiceItem {
 
     foreach ($raw in $lines) {
         $ln = $raw.Trim()
-        if ([string]::IsNullOrWhiteSpace($ln) -or (Test-NoiseLine $ln)) { continue }
+        if ([string]::IsNullOrWhiteSpace($ln) -or (Is-Noise $ln)) { continue }
 
         $m = [regex]::Match($ln, $lotRow)
         if ($m.Success) {
@@ -688,141 +688,131 @@ function Get-WavebidInvoiceItem {
     [CmdletBinding()]
     [OutputType([pscustomobject[]])]
     param(
-        [Parameter(Mandatory = $true)][string]$Text
+        [Parameter(Mandatory = $true)] [string]$Text,
+        [Parameter()]                  [string]$PdfPath
     )
 
-    # Reset buffers
+    # Buffers
     $script:ItemsBuffer.Clear() | Out-Null
     $script:ItemKeys.Clear()    | Out-Null
 
-    # Normalize lines (trim, drop blanks)
+    # Normalize lines (trim, drop empties)
     $lines = ($Text -split "(`r?`n)+" | ForEach-Object { $_.Trim() }) | Where-Object { $_ -ne '' }
 
-    if ($lines.Count -eq 0) { return @() }
+    # Regex patterns (PS5-safe)
+    $reHeader       = '(?i)^\s*Lot\s+Paddle\s+Description\b'
+    $reHeaderEcho   = $reHeader
+    $reFooter       = '(?i)^(Totals?:|Total\s+Lots:|Buyer\s+Information\b|Auction\s+Information\b|PAID\s+IN\s+FULL\b)'
+    # A: lot + paddle + rest
+    $reLotStartA    = '^(?<lot>\d{1,6}[A-Z]?)\s+(?<paddle>\d{3,10})\s+(?<rest>.+)$'
+    # B: lot + rest (no paddle column)
+    $reLotStartB    = '^(?<lot>\d{1,6}[A-Z]?)\s+(?<rest>.*[A-Za-z].*)$'
+    $reAmounts      = '\$?\d{1,3}(?:,\d{3})*\.\d{2}'
+    $reOnlyAmts     = '^(?:\s*\$?\d{1,3}(?:,\d{3})*\.\d{2}\s*)+$'
+    $reLocation     = '(?i)^\s*Location:'
 
-    # Patterns (compiled once)
-    $reHeader        = '(?i)^\s*Lot\s+Paddle\s+Description\b'
-    $reFooter        = '(?i)^(Totals?:|Total\s+Lots:|Buyer\s+Information\b|Auction\s+Information\b|SubTotal:|Credit\s+Total\s+Due:|Cash\s+Total\s+Due:)'
-    # Lot start: LOT + PADDLE + rest (paddle often 4 digits but allow wider)
-    $reLotStart      = '^(?<lot>\d{1,5}[A-Z]?)\s+(?<paddle>\d{2,12})\b\s*(?<rest>.*)$'
-    # Money
-    $reAmount        = '\$?\d{1,3}(?:,\d{3})*\.\d{2}'
-    $reAmountsOnly   = '^(?:\s*' + $reAmount + '\s*)+$'
-    # Noise lines we never want in the description
-    $reNoiseStart    = '(?i)^(Location:|Thank you for bidding|Removal timeline:|Bank wire info:|Bank name:|Acct name:|To schedule loadout:|By appointment only|Accepted forms of payment|REFUNDS WILL NOT|Credit Card -|Cash, Check, Wire Transfer -)'
-    # Some “page-wrap” header echoes appear mid-table — ignore them
-    $reInlineHeader  = $reHeader
+    # State for current lot block
+    $inTable    = $false
+    $curLot     = $null
+    $descParts  = New-Object System.Collections.Generic.List[string]
+    $amtBuf     = New-Object System.Collections.Generic.List[string]
 
-    # We’ll do a two-pass windowing approach: find all lot anchors first
-    $anchors = New-Object System.Collections.Generic.List[pscustomobject]
-    for ($i = 0; $i -lt $lines.Count; $i++) {
+    # Commit current lot block (inline, no nested function)
+    function __CommitCurrentWavebidBlock_NoNested {
+        param()
+        if ($null -eq $curLot) { return }
+        if ($amtBuf.Count -eq 0) { return }
+
+        # Heuristic: prefer the 2nd amount if available (typical order: Bid, Sale Price, Premium, Tax, Total).
+        $price = if ($amtBuf.Count -ge 2) { $amtBuf[1] } else { $amtBuf[0] }
+        $price = ($price -replace '[^\d\.]','')
+
+        $descJoined = (($descParts -join ' ') -replace '\s+', ' ').Trim()
+        if (-not [string]::IsNullOrWhiteSpace($price)) {
+            Add-InvoiceItem -Lot $curLot -Desc $descJoined -Price $price
+        }
+    }
+
+    $i = 0
+    while ($i -lt $lines.Count) {
         $ln = $lines[$i]
-        if ($ln -match $reLotStart) {
-            $lot  = $Matches['lot']
-            $rest = ($Matches['rest']).Trim()
-            $anchors.Add([pscustomobject]@{
-                Index = $i
-                Lot   = $lot
-                Rest  = $rest
-            }) | Out-Null
-        }
-    }
 
-    if ($anchors.Count -eq 0) { return @() }
-
-    # Helper: choose a sale price from a list of values in a window
-    # Rule of thumb for Wavebid: in a group of amounts for a lot, the second number is Sale Price
-    # If we see multiple “blocks” of 3–4 amounts (Bid, Sale, Premium, Tax/Total), prefer
-    # the first block after the lot line; otherwise use heuristic fallbacks.
-    function Select-SalePriceFrom {
-        param([string[]]$Amounts)
-        if (-not $Amounts -or $Amounts.Count -eq 0) { return $null }
-        if ($Amounts.Count -ge 2) { return ($Amounts[1] -replace '[^\d\.]','') }
-        return ($Amounts[0] -replace '[^\d\.]','')
-    }
-
-    # To remain ScriptAnalyzer-friendly, avoid nested functions above by keeping only this single local function;
-    # PowerShell treats it as a sibling in the global scope of the script file, not nested-in-nested blocks.
-
-    for ($a = 0; $a -lt $anchors.Count; $a++) {
-        $start = $anchors[$a].Index
-        $end   = $lines.Count
-        if ($a + 1 -lt $anchors.Count) {
-            $end = $anchors[$a + 1].Index
-        } else {
-            # Also stop at the first footer after this lot if present
-            for ($p = $start + 1; $p -lt $lines.Count; $p++) {
-                if ($lines[$p] -match $reFooter) { $end = $p; break }
-            }
+        if (-not $inTable) {
+            if ($ln -match $reHeader) { $inTable = $true }
+            $i++; continue
         }
 
-        # Build description from [start..end-1], skipping amounts-only rows, locations, headers, obvious noise
-        $descParts = New-Object System.Collections.Generic.List[string]
-
-        # Seed with the inline rest of the anchor (often contains the first half of the description)
-        $rest = $anchors[$a].Rest
-        if ($rest -and $rest -notmatch '^\d+$' -and $rest -notmatch $reAmountsOnly -and $rest -notmatch $reNoiseStart) {
-            $descParts.Add($rest) | Out-Null
+        # Section changes / hard stops
+        if ($ln -match $reFooter) {
+            __CommitCurrentWavebidBlock_NoNested
+            break
         }
 
-        # Collect amounts that occur AFTER the lot line but BEFORE the next lot/footer
-        $amounts = New-Object System.Collections.Generic.List[string]
+        # Ignore repeated headers (page wrap) and location lines inside table
+        if ($ln -match $reHeaderEcho) { $i++; continue }
+        if ($ln -match $reLocation)   { $i++; continue }
 
-        for ($i = $start + 1; $i -lt $end; $i++) {
-            $ln = $lines[$i]
-
-            # Skip spurious inline headers (page wrap within the table)
-            if ($ln -match $reInlineHeader) { continue }
-
-            # Skip clear non-description rows
-            if ($ln -match $reNoiseStart) { continue }
-
-            # If the line is ONLY amounts, collect them but don't add to description
-            if ($ln -match $reAmountsOnly) {
-                foreach ($m in [regex]::Matches($ln, $reAmount)) {
-                    $amounts.Add($m.Value) | Out-Null
+        # Amount-only row right after header or within a block
+        if ($ln -match $reOnlyAmts) {
+            if ($null -ne $curLot) {
+                foreach ($mAmt in [regex]::Matches($ln, $reAmounts)) {
+                    $amtBuf.Add($mAmt.Value) | Out-Null
                 }
-                continue
+            }
+            $i++; continue
+        }
+
+        # New lot start? Prefer A (lot+paddle), fall back to B (lot+desc)
+        $mA = [regex]::Match($ln, $reLotStartA)
+        $mB = if (-not $mA.Success) { [regex]::Match($ln, $reLotStartB) } else { $null }
+
+        if ($mA.Success -or $mB.Success) {
+            # Commit previous lot block
+            if ($null -ne $curLot) {
+                __CommitCurrentWavebidBlock_NoNested
             }
 
-            # Mixed lines may contain amounts and text (e.g., "Qty 1 $600.00")
-            $hasAmt = $false
-            foreach ($m in [regex]::Matches($ln, $reAmount)) {
-                $amounts.Add($m.Value) | Out-Null
-                $hasAmt = $true
+            $curLot    = if ($mA.Success) { $mA.Groups['lot'].Value } else { $mB.Groups['lot'].Value }
+            $descParts = New-Object System.Collections.Generic.List[string]
+            $amtBuf    = New-Object System.Collections.Generic.List[string]
+
+            # Initial description on same line
+            $rest = if ($mA.Success) { $mA.Groups['rest'].Value } else { $mB.Groups['rest'].Value }
+            $rest = $rest.Trim()
+            if ($rest -and $rest -notmatch '^\d+$' -and $rest -notmatch $reOnlyAmts) {
+                $descParts.Add($rest) | Out-Null
             }
 
-            # Suppress “Location: …” rows and pure “Qty N $…” only-amount-ish lines from description
-            if ($ln -match '^(?i)\s*Location:' -or ($hasAmt -and $ln -match '^(?i)\s*Qty\b')) {
-                continue
+            # Amounts on same line
+            foreach ($mAmt in [regex]::Matches($ln, $reAmounts)) {
+                $amtBuf.Add($mAmt.Value) | Out-Null
             }
 
-            # Otherwise, keep the text as description fragment
-            if ($ln -notmatch '^\d{1,5}[A-Z]?\s+\d{2,12}\s') {  # avoid accidentally re-adding next lot line (very defensive)
+            $i++; continue
+        }
+
+        # Inside a lot block: add amounts + description lines (skip noise)
+        if ($null -ne $curLot) {
+            foreach ($mAmt in [regex]::Matches($ln, $reAmounts)) {
+                $amtBuf.Add($mAmt.Value) | Out-Null
+            }
+            if (($ln -notmatch $reOnlyAmts) -and ($ln -notmatch $reLocation) -and ($ln -notmatch $reHeaderEcho)) {
                 $descParts.Add($ln) | Out-Null
             }
+            $i++; continue
         }
 
-        # Heuristic: some PDFs drop an “amounts-only” block BEFORE the first real lot.
-        # Because we only collect after $start, those prelude amounts won’t poison this lot.
+        # In table but haven’t seen first lot yet; skip until a valid lot line appears
+        $i++
+    }
 
-        # Choose sale price
-        $price = Select-SalePriceFrom -Amounts $amounts
-
-        # Finalize description
-        $desc = (($descParts -join ' ') -replace '\s+', ' ').Trim()
-        # Strip trailing stray punctuation caused by wrapped columns
-        $desc = ($desc -replace '\s+CENTER OUT FROM\s*$', '').Trim()
-        $desc = ($desc -replace '\s+BY DOOR\s*\d+\s*$', '').Trim()
-
-        if ($anchors[$a].Lot -and $price) {
-            Add-InvoiceItem -Lot $anchors[$a].Lot -Desc $desc -Price ($price -replace ',','')
-        }
+    # End-of-file commit
+    if ($null -ne $curLot) {
+        __CommitCurrentWavebidBlock_NoNested
     }
 
     return $script:ItemsBuffer.ToArray()
 }
-
 
 function Get-GenericInvoiceItem {
     [CmdletBinding()]

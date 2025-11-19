@@ -1,0 +1,58 @@
+[2025-10-24 13:40:30] [INFO] === Logistics Email Automation Started ===
+[2025-10-24 13:40:30] [INFO] Script Version: 1.5.5
+[2025-10-24 13:40:30] [INFO] User: JohnO'NeillSr
+[2025-10-24 13:40:30] [INFO] Machine: ITSAMURAI
+[2025-10-24 13:40:30] [INFO] PDF Helper Available: True
+[2025-10-24 13:40:30] [INFO] Starting data import process
+[2025-10-24 13:40:30] [INFO] Importing CSV data from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Party City Auction 10-2025\PurchaseTracking_dc-auc10026.csv
+[2025-10-24 13:40:30] [SUCCESS] Successfully imported 11 lots
+[2025-10-24 13:40:30] [INFO] Processing lot images (max 3 per lot)
+[2025-10-24 13:40:30] [DEBUG] Lot 113: Found 7 images, including 3 (max: 3)
+[2025-10-24 13:40:30] [DEBUG]   Selected: 113.jpg, 113-2.jpg, 113-3.jpg
+[2025-10-24 13:40:30] [INFO] Lot 113 has 7 images, selected: Primary, Image2, Image3
+[2025-10-24 13:40:30] [DEBUG] Lot 434: Found 7 images, including 3 (max: 3)
+[2025-10-24 13:40:30] [DEBUG]   Selected: 434.jpg, 434-2.jpg, 434-3.jpg
+[2025-10-24 13:40:30] [INFO] Lot 434 has 7 images, selected: Primary, Image2, Image3
+[2025-10-24 13:40:30] [DEBUG] Lot 448: Found 4 images, including 3 (max: 3)
+[2025-10-24 13:40:30] [DEBUG]   Selected: 448.jpg, 448-2.jpg, 448-3.jpg
+[2025-10-24 13:40:30] [INFO] Lot 448 has 4 images, selected: Primary, Image2, Image3
+[2025-10-24 13:40:30] [DEBUG] Lot 449A: Found 3 images, including 3 (max: 3)
+[2025-10-24 13:40:30] [DEBUG]   Selected: 449A.jpg, 449A-2.jpg, 449A-3.jpg
+[2025-10-24 13:40:30] [DEBUG] Lot 450: Found 3 images, including 3 (max: 3)
+[2025-10-24 13:40:30] [DEBUG]   Selected: 450.jpg, 450-2.jpg, 450-5.jpg
+[2025-10-24 13:40:30] [DEBUG] Lot 463: Found 7 images, including 3 (max: 3)
+[2025-10-24 13:40:30] [DEBUG]   Selected: 463.jpg, 463-2.jpg, 463-3.jpg
+[2025-10-24 13:40:30] [INFO] Lot 463 has 7 images, selected: Primary, Image2, Image3
+[2025-10-24 13:40:30] [DEBUG] Lot 491: Found 1 images, including 1 (max: 3)
+[2025-10-24 13:40:30] [DEBUG]   Selected: 491.jpg
+[2025-10-24 13:40:30] [DEBUG] Lot 492: Found 4 images, including 3 (max: 3)
+[2025-10-24 13:40:30] [DEBUG]   Selected: 492.jpg, 492-2.jpg, 492-3.jpg
+[2025-10-24 13:40:30] [INFO] Lot 492 has 4 images, selected: Primary, Image2, Image3
+[2025-10-24 13:40:30] [DEBUG] Lot 494: Found 3 images, including 3 (max: 3)
+[2025-10-24 13:40:30] [DEBUG]   Selected: 494.jpg, 494-2.jpg, 494-3.jpg
+[2025-10-24 13:40:31] [DEBUG] Lot 505: Found 8 images, including 3 (max: 3)
+[2025-10-24 13:40:31] [DEBUG]   Selected: 505.jpg, 505-2.jpg, 505-3.jpg
+[2025-10-24 13:40:31] [INFO] Lot 505 has 8 images, selected: Primary, Image2, Image3
+[2025-10-24 13:40:31] [DEBUG] Lot 509: Found 5 images, including 3 (max: 3)
+[2025-10-24 13:40:31] [DEBUG]   Selected: 509.jpg, 509-2.jpg, 509-3.jpg
+[2025-10-24 13:40:31] [INFO] Lot 509 has 5 images, selected: Primary, Image2, Image3
+[2025-10-24 13:40:31] [INFO] Including 31 of 52 total images found
+[2025-10-24 13:40:31] [INFO] Generating HTML image report
+[2025-10-24 13:40:31] [INFO] Generating image report for 11 lots with 31 total images
+[2025-10-24 13:40:31] [SUCCESS] Image report generated successfully: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Party City Auction 10-2025\Logistics\AuctionLots_20251024_134031.html
+[2025-10-24 13:40:31] [INFO]   Lots: 11
+[2025-10-24 13:40:31] [INFO]   Images: 31
+[2025-10-24 13:40:31] [INFO] Attempting automatic PDF conversion...
+[2025-10-24 13:41:01] [SUCCESS] PDF created successfully: AuctionLots_20251024_134031.pdf
+[2025-10-24 13:41:01] [INFO] Generating HTML email with config data
+[2025-10-24 13:41:01] [INFO] Generating HTML email for 11 lots
+[2025-10-24 13:41:01] [SUCCESS] HTML email generated successfully
+[2025-10-24 13:41:01] [SUCCESS] HTML email saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Party City Auction 10-2025\Logistics\LogisticsEmail_20251024_134101.html
+[2025-10-24 13:41:01] [INFO] Creating Outlook draft email
+[2025-10-24 13:41:02] [DEBUG] Added attachment: AuctionLots_20251024_134031.pdf
+[2025-10-24 13:41:05] [SUCCESS] Outlook draft email created successfully
+[2025-10-24 13:41:06] [SUCCESS] Processing report exported to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Party City Auction 10-2025\Logistics\ProcessingReport_20251024_134106.html
+[2025-10-24 13:41:06] [SUCCESS] === Logistics Email Automation Completed Successfully ===
+[2025-10-24 13:41:06] [INFO] Output files saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Party City Auction 10-2025\Logistics
+[2025-10-24 13:41:06] [INFO] Script execution completed
+[2025-10-24 13:41:06] [INFO] Total execution time: 00:00:35.9904862

@@ -1,27 +1,31 @@
 {
+  "template_path": "Templates/LogisticsEmail_Template.html",
+  "email_subject": "Freight Quote Request - [Location] to Ashtabula, OH - Pickup [Date]",
+  "delivery_address": "1214 Lake Avenue, Ashtabula, OH 44004",
   "auction_info": {
-    "special_notes": [
-      "Forklift available on site for loading",
-      "Delivery location has dock with pallet jacks only",
-      "Trucks must back up to dock for unloading",
-      "Total weight will NOT exceed standard truck capacity"
-    ],
-    "pickup_datetime": "[Specify pickup date/time from invoice]",
-    "delivery_notice": "Driver must call at least one hour prior to delivery",
+    "auction_name": "Brolyn Auctions",
+    "pickup_address": "[To be filled from invoice]",
+    "pickup_datetime": "[Specify pickup date/time]",
+    "pickup_requirements": "Appointment is required. Driver must bring invoice showing paddle #.",
+    "delivery_datetime": "[Specify delivery window] between 8:00am and 6:00pm EDT BY APPOINTMENT",
+    "delivery_requirements": "[If any: e.g., Truck must be able to unload to ground; no onsite equipment.]",
+    "delivery_notes": "Driver must call at least one hour prior to delivery. Dock is in the rear of the complex. Driver must pull around the building. Our dock has a sign reading “JT Custom Trailers”",
     "logistics_contact": {
+      "name": "[Contact Name]",
       "phone": "(574) 891-3111",
       "email": "logistics@brolynauctions.com"
     },
-    "auction_name": "Brolyn Auctions",
-    "delivery_datetime": "[Next business day] between 9:00am and 5:00pm EST",
-    "pickup_address": "[To be filled from invoice]"
+    "special_notes": [
+      "Forklift available on site for loading",
+      "Delivery location has dock with forklift",
+      "Trucks must back up to dock for unloading",
+      "Total weight will NOT exceed standard truck capacity"
+    ]
   },
-  "email_subject": "Freight Quote Request - [Location] to Ashtabula, OH - Pickup [Date]",
   "shipping_requirements": {
-    "truck_types": "Two trucks: 53' dry van + Flatbed (tarped)",
-    "weight_notes": "Total weight unknown but will NOT exceed standard load capacity",
+    "truck_types": "TBD - Please recommend based on items",
+    "labor_needed": "1-2 people for consolidation, freight prep, and loading",
     "total_pallets": "TBD",
-    "labor_needed": "1-2 people for consolidation, freight prep, and loading"
-  },
-  "delivery_address": "1218 Lake Avenue, Ashtabula, OH 44004"
+    "weight_notes": "Total weight unknown but will NOT exceed standard load capacity"
+  }
 }

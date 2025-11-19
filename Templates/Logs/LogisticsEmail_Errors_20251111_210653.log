@@ -1,0 +1,6 @@
+[2025-11-11 21:06:53] [ERROR] Failed to import CSV: Cannot index into a null array.
+[2025-11-11 21:06:53] [ERROR] Fatal error: Cannot index into a null array.
+[2025-11-11 21:06:53] [ERROR] Stack Trace: at <ScriptBlock>, C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Generate-LogisticsEmail.ps1: line 306
+at Import-AuctionData, C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Generate-LogisticsEmail.ps1: line 306
+at <ScriptBlock>, C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Generate-LogisticsEmail.ps1: line 1004
+at <ScriptBlock>, <No file>: line 1

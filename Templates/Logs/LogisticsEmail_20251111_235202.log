@@ -1,0 +1,104 @@
+[2025-11-11 23:52:02] [INFO] === Logistics Email Automation Started ===
+[2025-11-11 23:52:02] [INFO] Script Version: 1.5.5
+[2025-11-11 23:52:02] [INFO] User: JohnO'NeillSr
+[2025-11-11 23:52:02] [INFO] Machine: ITSAMURAI
+[2025-11-11 23:52:02] [INFO] PDF Helper Available: True
+[2025-11-11 23:52:02] [INFO] Loading configuration from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Templates\Brolyn_Auctions.json
+[2025-11-11 23:52:02] [SUCCESS] Configuration loaded successfully
+[2025-11-11 23:52:02] [SUCCESS] Using configuration from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Templates\Brolyn_Auctions.json
+[2025-11-11 23:52:02] [INFO] Starting data import process
+[2025-11-11 23:52:02] [INFO] Importing CSV data from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\DRV Luxury Suites RV 11-2025\Plant 203\PurchaseTracking_brolyn10248.csv
+[2025-11-11 23:52:02] [SUCCESS] Successfully imported 25 lots
+[2025-11-11 23:52:02] [INFO] Processing lot images (max 3 per lot)
+[2025-11-11 23:52:02] [DEBUG] Lot 3: Found 10 images, including 3 (max: 3)
+[2025-11-11 23:52:02] [DEBUG]   Selected: 3.jpg, 3-2.jpg, 3-3.jpg
+[2025-11-11 23:52:02] [INFO] Lot 3 has 10 images, selected: Primary, Image2, Image3
+[2025-11-11 23:52:02] [DEBUG] Lot 4: Found 6 images, including 3 (max: 3)
+[2025-11-11 23:52:02] [DEBUG]   Selected: 4.jpg, 4-2.jpg, 4-3.jpg
+[2025-11-11 23:52:02] [INFO] Lot 4 has 6 images, selected: Primary, Image2, Image3
+[2025-11-11 23:52:02] [DEBUG] Lot 35: Found 5 images, including 3 (max: 3)
+[2025-11-11 23:52:02] [DEBUG]   Selected: 35.jpg, 35-2.jpg, 35-3.jpg
+[2025-11-11 23:52:02] [INFO] Lot 35 has 5 images, selected: Primary, Image2, Image3
+[2025-11-11 23:52:02] [DEBUG] Lot 164: Found 12 images, including 3 (max: 3)
+[2025-11-11 23:52:02] [DEBUG]   Selected: 164.jpg, 164-2.jpg, 164-3.jpg
+[2025-11-11 23:52:02] [INFO] Lot 164 has 12 images, selected: Primary, Image2, Image3
+[2025-11-11 23:52:03] [DEBUG] Lot 171: Found 12 images, including 3 (max: 3)
+[2025-11-11 23:52:03] [DEBUG]   Selected: 171.jpg, 171-2.jpg, 171-3.jpg
+[2025-11-11 23:52:03] [INFO] Lot 171 has 12 images, selected: Primary, Image2, Image3
+[2025-11-11 23:52:03] [DEBUG] Lot 174: Found 14 images, including 3 (max: 3)
+[2025-11-11 23:52:03] [DEBUG]   Selected: 174.jpg, 174-2.jpg, 174-3.jpg
+[2025-11-11 23:52:03] [INFO] Lot 174 has 14 images, selected: Primary, Image2, Image3
+[2025-11-11 23:52:03] [DEBUG] Lot 176: Found 6 images, including 3 (max: 3)
+[2025-11-11 23:52:03] [DEBUG]   Selected: 176.jpg, 176-2.jpg, 176-3.jpg
+[2025-11-11 23:52:03] [INFO] Lot 176 has 6 images, selected: Primary, Image2, Image3
+[2025-11-11 23:52:03] [DEBUG] Lot 177: Found 7 images, including 3 (max: 3)
+[2025-11-11 23:52:03] [DEBUG]   Selected: 177.jpg, 177-2.jpg, 177-3.jpg
+[2025-11-11 23:52:03] [INFO] Lot 177 has 7 images, selected: Primary, Image2, Image3
+[2025-11-11 23:52:03] [DEBUG] Lot 178: Found 6 images, including 3 (max: 3)
+[2025-11-11 23:52:03] [DEBUG]   Selected: 178.jpg, 178-2.jpg, 178-3.jpg
+[2025-11-11 23:52:03] [INFO] Lot 178 has 6 images, selected: Primary, Image2, Image3
+[2025-11-11 23:52:03] [DEBUG] Lot 290: Found 11 images, including 3 (max: 3)
+[2025-11-11 23:52:03] [DEBUG]   Selected: 290.jpg, 290-2.jpg, 290-3.jpg
+[2025-11-11 23:52:03] [INFO] Lot 290 has 11 images, selected: Primary, Image2, Image3
+[2025-11-11 23:52:03] [DEBUG] Lot 291: Found 11 images, including 3 (max: 3)
+[2025-11-11 23:52:03] [DEBUG]   Selected: 291.jpg, 291-2.jpg, 291-3.jpg
+[2025-11-11 23:52:03] [INFO] Lot 291 has 11 images, selected: Primary, Image2, Image3
+[2025-11-11 23:52:03] [DEBUG] Lot 296: Found 6 images, including 3 (max: 3)
+[2025-11-11 23:52:03] [DEBUG]   Selected: 296.jpg, 296-2.jpg, 296-3.jpg
+[2025-11-11 23:52:03] [INFO] Lot 296 has 6 images, selected: Primary, Image2, Image3
+[2025-11-11 23:52:03] [DEBUG] Lot 368: Found 6 images, including 3 (max: 3)
+[2025-11-11 23:52:03] [DEBUG]   Selected: 368.jpg, 368-2.jpg, 368-3.jpg
+[2025-11-11 23:52:03] [INFO] Lot 368 has 6 images, selected: Primary, Image2, Image3
+[2025-11-11 23:52:03] [DEBUG] Lot 369: Found 5 images, including 3 (max: 3)
+[2025-11-11 23:52:03] [DEBUG]   Selected: 369.jpg, 369-2.jpg, 369-3.jpg
+[2025-11-11 23:52:03] [INFO] Lot 369 has 5 images, selected: Primary, Image2, Image3
+[2025-11-11 23:52:03] [DEBUG] Lot 379: Found 6 images, including 3 (max: 3)
+[2025-11-11 23:52:03] [DEBUG]   Selected: 379.jpg, 379-2.jpg, 379-4.jpg
+[2025-11-11 23:52:03] [INFO] Lot 379 has 6 images, selected: Primary, Image2, Image4
+[2025-11-11 23:52:03] [DEBUG] Lot 392: Found 11 images, including 3 (max: 3)
+[2025-11-11 23:52:03] [DEBUG]   Selected: 392.jpg, 392-2.jpg, 392-3.jpg
+[2025-11-11 23:52:03] [INFO] Lot 392 has 11 images, selected: Primary, Image2, Image3
+[2025-11-11 23:52:03] [DEBUG] Lot 394: Found 6 images, including 3 (max: 3)
+[2025-11-11 23:52:03] [DEBUG]   Selected: 394.jpg, 394-2.jpg, 394-3.jpg
+[2025-11-11 23:52:03] [INFO] Lot 394 has 6 images, selected: Primary, Image2, Image3
+[2025-11-11 23:52:03] [DEBUG] Lot 630: Found 10 images, including 3 (max: 3)
+[2025-11-11 23:52:04] [DEBUG]   Selected: 630.jpg, 630-2.jpg, 630-3.jpg
+[2025-11-11 23:52:04] [INFO] Lot 630 has 10 images, selected: Primary, Image2, Image3
+[2025-11-11 23:52:04] [DEBUG] Lot 655: Found 6 images, including 3 (max: 3)
+[2025-11-11 23:52:04] [DEBUG]   Selected: 655.jpg, 655-2.jpg, 655-3.jpg
+[2025-11-11 23:52:04] [INFO] Lot 655 has 6 images, selected: Primary, Image2, Image3
+[2025-11-11 23:52:04] [DEBUG] Lot 661: Found 4 images, including 3 (max: 3)
+[2025-11-11 23:52:04] [DEBUG]   Selected: 661.jpg, 661-2.jpg, 661-3.jpg
+[2025-11-11 23:52:04] [INFO] Lot 661 has 4 images, selected: Primary, Image2, Image3
+[2025-11-11 23:52:04] [DEBUG] Lot 662: Found 3 images, including 3 (max: 3)
+[2025-11-11 23:52:04] [DEBUG]   Selected: 662.jpg, 662-2.jpg, 662-3.jpg
+[2025-11-11 23:52:04] [DEBUG] Lot 663: Found 3 images, including 3 (max: 3)
+[2025-11-11 23:52:04] [DEBUG]   Selected: 663.jpg, 663-2.jpg, 663-3.jpg
+[2025-11-11 23:52:04] [DEBUG] Lot 664: Found 4 images, including 3 (max: 3)
+[2025-11-11 23:52:04] [DEBUG]   Selected: 664.jpg, 664-2.jpg, 664-3.jpg
+[2025-11-11 23:52:04] [INFO] Lot 664 has 4 images, selected: Primary, Image2, Image3
+[2025-11-11 23:52:04] [DEBUG] Lot 665: Found 4 images, including 3 (max: 3)
+[2025-11-11 23:52:04] [DEBUG]   Selected: 665.jpg, 665-2.jpg, 665-3.jpg
+[2025-11-11 23:52:04] [INFO] Lot 665 has 4 images, selected: Primary, Image2, Image3
+[2025-11-11 23:52:04] [DEBUG] Lot 683: Found 8 images, including 3 (max: 3)
+[2025-11-11 23:52:04] [DEBUG]   Selected: 683.jpg, 683-2.jpg, 683-3.jpg
+[2025-11-11 23:52:04] [INFO] Lot 683 has 8 images, selected: Primary, Image2, Image3
+[2025-11-11 23:52:04] [INFO] Including 75 of 182 total images found
+[2025-11-11 23:52:04] [INFO] Generating HTML image report
+[2025-11-11 23:52:04] [INFO] Generating image report for 25 lots with 75 total images
+[2025-11-11 23:52:04] [SUCCESS] Image report generated successfully: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\DRV Luxury Suites RV 11-2025\Plant 203\Logistics\AuctionLots_20251111_235204.html
+[2025-11-11 23:52:04] [INFO]   Lots: 25
+[2025-11-11 23:52:04] [INFO]   Images: 75
+[2025-11-11 23:52:06] [INFO] Attempting automatic PDF conversion...
+[2025-11-11 23:52:19] [WARNING] Automatic PDF conversion failed, using HTML report
+[2025-11-11 23:52:19] [INFO] Generating HTML email with config data
+[2025-11-11 23:52:19] [INFO] Generating HTML email for 25 lots
+[2025-11-11 23:52:19] [SUCCESS] HTML email generated successfully
+[2025-11-11 23:52:19] [SUCCESS] HTML email saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\DRV Luxury Suites RV 11-2025\Plant 203\Logistics\LogisticsEmail_20251111_235219.html
+[2025-11-11 23:52:19] [INFO] Outlook draft creation skipped (use -CreateOutlookDraft to enable)
+[2025-11-11 23:52:19] [INFO] Opening HTML in default browser
+[2025-11-11 23:52:19] [SUCCESS] Processing report exported to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\DRV Luxury Suites RV 11-2025\Plant 203\Logistics\ProcessingReport_20251111_235219.html
+[2025-11-11 23:52:19] [SUCCESS] === Logistics Email Automation Completed Successfully ===
+[2025-11-11 23:52:19] [INFO] Output files saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\DRV Luxury Suites RV 11-2025\Plant 203\Logistics
+[2025-11-11 23:52:19] [INFO] Script execution completed
+[2025-11-11 23:52:19] [INFO] Total execution time: 00:00:17.3293626

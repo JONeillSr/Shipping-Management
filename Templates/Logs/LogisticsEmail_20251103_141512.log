@@ -1,0 +1,78 @@
+[2025-11-03 14:15:12] [INFO] === Logistics Email Automation Started ===
+[2025-11-03 14:15:12] [INFO] Script Version: 1.5.5
+[2025-11-03 14:15:12] [INFO] User: JohnO'NeillSr
+[2025-11-03 14:15:12] [INFO] Machine: ITSAMURAI
+[2025-11-03 14:15:12] [INFO] PDF Helper Available: True
+[2025-11-03 14:15:12] [INFO] Created output directory: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\Cruiser RV 10-2025\Plant 201\Logistics
+[2025-11-03 14:15:12] [INFO] Loading configuration from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Templates\Brolyn_Auctions.json
+[2025-11-03 14:15:12] [SUCCESS] Configuration loaded successfully
+[2025-11-03 14:15:12] [SUCCESS] Using configuration from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Templates\Brolyn_Auctions.json
+[2025-11-03 14:15:12] [INFO] Starting data import process
+[2025-11-03 14:15:12] [INFO] Importing CSV data from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\Cruiser RV 10-2025\Plant 201\PurchaseTracking_brolyn10247.csv
+[2025-11-03 14:15:12] [SUCCESS] Successfully imported 16 lots
+[2025-11-03 14:15:12] [INFO] Processing lot images (max 3 per lot)
+[2025-11-03 14:15:12] [DEBUG] Lot 2: Found 5 images, including 3 (max: 3)
+[2025-11-03 14:15:12] [DEBUG]   Selected: 2.jpg, 2-2.jpg, 2-3.jpg
+[2025-11-03 14:15:12] [INFO] Lot 2 has 5 images, selected: Primary, Image2, Image3
+[2025-11-03 14:15:12] [DEBUG] Lot 14: Found 4 images, including 3 (max: 3)
+[2025-11-03 14:15:12] [DEBUG]   Selected: 14.jpg, 14-2.jpg, 14-3.jpg
+[2025-11-03 14:15:12] [INFO] Lot 14 has 4 images, selected: Primary, Image2, Image3
+[2025-11-03 14:15:12] [DEBUG] Lot 16: Found 13 images, including 3 (max: 3)
+[2025-11-03 14:15:12] [DEBUG]   Selected: 16.jpg, 16-2.jpg, 16-3.jpg
+[2025-11-03 14:15:12] [INFO] Lot 16 has 13 images, selected: Primary, Image2, Image3
+[2025-11-03 14:15:12] [DEBUG] Lot 53: Found 3 images, including 3 (max: 3)
+[2025-11-03 14:15:12] [DEBUG]   Selected: 53.jpg, 53-2.jpg, 53-3.jpg
+[2025-11-03 14:15:12] [DEBUG] Lot 54: Found 4 images, including 3 (max: 3)
+[2025-11-03 14:15:12] [DEBUG]   Selected: 54.jpg, 54-2.jpg, 54-3.jpg
+[2025-11-03 14:15:12] [INFO] Lot 54 has 4 images, selected: Primary, Image2, Image3
+[2025-11-03 14:15:12] [DEBUG] Lot 55: Found 6 images, including 3 (max: 3)
+[2025-11-03 14:15:12] [DEBUG]   Selected: 55.jpg, 55-2.jpg, 55-3.jpg
+[2025-11-03 14:15:13] [INFO] Lot 55 has 6 images, selected: Primary, Image2, Image3
+[2025-11-03 14:15:13] [DEBUG] Lot 56: Found 8 images, including 3 (max: 3)
+[2025-11-03 14:15:13] [DEBUG]   Selected: 56.jpg, 56-2.jpg, 56-3.jpg
+[2025-11-03 14:15:13] [INFO] Lot 56 has 8 images, selected: Primary, Image2, Image3
+[2025-11-03 14:15:13] [DEBUG] Lot 85: Found 18 images, including 3 (max: 3)
+[2025-11-03 14:15:13] [DEBUG]   Selected: 85.jpg, 85-2.jpg, 85-3.jpg
+[2025-11-03 14:15:13] [INFO] Lot 85 has 18 images, selected: Primary, Image2, Image3
+[2025-11-03 14:15:13] [DEBUG] Lot 119: Found 7 images, including 3 (max: 3)
+[2025-11-03 14:15:13] [DEBUG]   Selected: 119.jpg, 119-2.jpg, 119-3.jpg
+[2025-11-03 14:15:13] [INFO] Lot 119 has 7 images, selected: Primary, Image2, Image3
+[2025-11-03 14:15:13] [DEBUG] Lot 133: Found 4 images, including 3 (max: 3)
+[2025-11-03 14:15:13] [DEBUG]   Selected: 133.jpg, 133-2.jpg, 133-3.jpg
+[2025-11-03 14:15:13] [INFO] Lot 133 has 4 images, selected: Primary, Image2, Image3
+[2025-11-03 14:15:13] [DEBUG] Lot 144: Found 15 images, including 3 (max: 3)
+[2025-11-03 14:15:13] [DEBUG]   Selected: 144.jpg, 144-2.jpg, 144-3.jpg
+[2025-11-03 14:15:13] [INFO] Lot 144 has 15 images, selected: Primary, Image2, Image3
+[2025-11-03 14:15:13] [DEBUG] Lot 171: Found 15 images, including 3 (max: 3)
+[2025-11-03 14:15:13] [DEBUG]   Selected: 171.jpg, 171-2.jpg, 171-3.jpg
+[2025-11-03 14:15:13] [INFO] Lot 171 has 15 images, selected: Primary, Image2, Image3
+[2025-11-03 14:15:13] [DEBUG] Lot 175: Found 4 images, including 3 (max: 3)
+[2025-11-03 14:15:13] [DEBUG]   Selected: 175.jpg, 175-2.jpg, 175-3.jpg
+[2025-11-03 14:15:13] [INFO] Lot 175 has 4 images, selected: Primary, Image2, Image3
+[2025-11-03 14:15:13] [DEBUG] Lot 250: Found 2 images, including 2 (max: 3)
+[2025-11-03 14:15:13] [DEBUG]   Selected: 250.jpg, 250-2.jpg
+[2025-11-03 14:15:13] [DEBUG] Lot 313: Found 7 images, including 3 (max: 3)
+[2025-11-03 14:15:13] [DEBUG]   Selected: 313.jpg, 313-2.jpg, 313-3.jpg
+[2025-11-03 14:15:13] [INFO] Lot 313 has 7 images, selected: Primary, Image2, Image3
+[2025-11-03 14:15:13] [DEBUG] Lot 396: Found 6 images, including 3 (max: 3)
+[2025-11-03 14:15:13] [DEBUG]   Selected: 396.jpg, 396-2.jpg, 396-3.jpg
+[2025-11-03 14:15:13] [INFO] Lot 396 has 6 images, selected: Primary, Image2, Image3
+[2025-11-03 14:15:13] [INFO] Including 47 of 121 total images found
+[2025-11-03 14:15:13] [INFO] Generating HTML image report
+[2025-11-03 14:15:13] [INFO] Generating image report for 16 lots with 47 total images
+[2025-11-03 14:15:14] [SUCCESS] Image report generated successfully: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\Cruiser RV 10-2025\Plant 201\Logistics\AuctionLots_20251103_141513.html
+[2025-11-03 14:15:14] [INFO]   Lots: 16
+[2025-11-03 14:15:14] [INFO]   Images: 47
+[2025-11-03 14:15:14] [INFO] Attempting automatic PDF conversion...
+[2025-11-03 14:15:44] [SUCCESS] PDF created successfully: AuctionLots_20251103_141514.pdf
+[2025-11-03 14:15:44] [INFO] Generating HTML email with config data
+[2025-11-03 14:15:44] [INFO] Generating HTML email for 16 lots
+[2025-11-03 14:15:44] [SUCCESS] HTML email generated successfully
+[2025-11-03 14:15:44] [SUCCESS] HTML email saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\Cruiser RV 10-2025\Plant 201\Logistics\LogisticsEmail_20251103_141544.html
+[2025-11-03 14:15:44] [INFO] Outlook draft creation skipped (use -CreateOutlookDraft to enable)
+[2025-11-03 14:15:45] [INFO] Opening HTML in default browser
+[2025-11-03 14:15:45] [SUCCESS] Processing report exported to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\Cruiser RV 10-2025\Plant 201\Logistics\ProcessingReport_20251103_141545.html
+[2025-11-03 14:15:45] [SUCCESS] === Logistics Email Automation Completed Successfully ===
+[2025-11-03 14:15:45] [INFO] Output files saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\Cruiser RV 10-2025\Plant 201\Logistics
+[2025-11-03 14:15:45] [INFO] Script execution completed
+[2025-11-03 14:15:45] [INFO] Total execution time: 00:00:32.6932968
