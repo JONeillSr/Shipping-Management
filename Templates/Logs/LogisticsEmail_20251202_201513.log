@@ -1,0 +1,26 @@
+[2025-12-02 20:15:13] [INFO] === Logistics Email Automation Started ===
+[2025-12-02 20:15:13] [INFO] Script Version: 1.8.2
+[2025-12-02 20:15:13] [INFO] User: JohnO'NeillSr
+[2025-12-02 20:15:13] [INFO] Machine: ITSAMURAI
+[2025-12-02 20:15:13] [INFO] Loading configuration from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Templates\Brolyn_Auctions.json
+[2025-12-02 20:15:13] [SUCCESS] Using configuration from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Templates\Brolyn_Auctions.json
+[2025-12-02 20:15:13] [INFO] Starting data import process
+[2025-12-02 20:15:13] [INFO] Importing CSV data from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\Heartland 11-2025\Heartland 19\PurchaseTracking_Brolyn10249.csv
+[2025-12-02 20:15:13] [SUCCESS] Successfully imported 13 lots
+[2025-12-02 20:15:13] [INFO] Processing lot images (max 3 per lot)
+[2025-12-02 20:15:13] [INFO] Including 39 of 122 total images found
+[2025-12-02 20:15:13] [INFO] Generating HTML image report
+[2025-12-02 20:15:13] [INFO] Generating image report for 13 lots with 39 total images
+[2025-12-02 20:15:14] [SUCCESS] Image report generated: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\Heartland 11-2025\Heartland 19\Logistics\AuctionLots_20251202_201513.html
+[2025-12-02 20:16:03] [ERROR] Error during PDF conversion: No HTML→PDF method succeeded. Tried Edge, Chrome, wkhtmltopdf, LibreOffice.
+[2025-12-02 20:16:03] [WARNING] Falling back to HTML report
+[2025-12-02 20:16:03] [INFO] Generating HTML email with config data
+[2025-12-02 20:16:03] [SUCCESS] HTML email saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\Heartland 11-2025\Heartland 19\Logistics\LogisticsEmail_20251202_201603.html
+[2025-12-02 20:16:03] [INFO] Creating Outlook draft email
+[2025-12-02 20:16:04] [DEBUG] Added attachment: AuctionLots_20251202_201513.html
+[2025-12-02 20:16:05] [SUCCESS] Outlook draft email created successfully
+[2025-12-02 20:16:05] [SUCCESS] Processing report exported to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\Heartland 11-2025\Heartland 19\Logistics\ProcessingReport_20251202_201605.html
+[2025-12-02 20:16:05] [SUCCESS] === Logistics Email Automation Completed Successfully ===
+[2025-12-02 20:16:05] [INFO] Output files saved to: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\Heartland 11-2025\Heartland 19\Logistics
+[2025-12-02 20:16:05] [INFO] Script execution completed
+[2025-12-02 20:16:05] [INFO] Total execution time: 00:00:52.3558909

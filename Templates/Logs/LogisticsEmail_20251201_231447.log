@@ -1,0 +1,17 @@
+[2025-12-01 23:14:47] [INFO] === Logistics Email Automation Started ===
+[2025-12-01 23:14:47] [INFO] Script Version: 1.8.0
+[2025-12-01 23:14:47] [INFO] User: JohnO'NeillSr
+[2025-12-01 23:14:47] [INFO] Machine: ITSAMURAI
+[2025-12-01 23:14:47] [INFO] Created output directory: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\Heartland 11-2025\Heartland 19\Logistics
+[2025-12-01 23:14:47] [INFO] Loading configuration from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Templates\Brolyn_Auctions.json
+[2025-12-01 23:14:47] [SUCCESS] Using configuration from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\Scripts\Shipping-Management\Templates\Brolyn_Auctions.json
+[2025-12-01 23:14:47] [INFO] Starting data import process
+[2025-12-01 23:14:47] [INFO] Importing CSV data from: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\Heartland 11-2025\Heartland 19\PurchaseTracking_Brolyn10249.csv
+[2025-12-01 23:14:47] [SUCCESS] Successfully imported 13 lots
+[2025-12-01 23:14:47] [INFO] Processing lot images (max 3 per lot)
+[2025-12-01 23:14:47] [INFO] Including 39 of 122 total images found
+[2025-12-01 23:14:48] [INFO] Generating HTML image report
+[2025-12-01 23:14:48] [INFO] Generating image report for 13 lots with 39 total images
+[2025-12-01 23:14:48] [SUCCESS] Image report generated: C:\Users\JohnO'NeillSr\OneDrive - AwesomeWildStuff.com\JT Custom Trailers\Auctions\Brolyn\Heartland 11-2025\Heartland 19\Logistics\AuctionLots_20251201_231448.html
+[2025-12-01 23:23:42] [INFO] Script execution completed
+[2025-12-01 23:23:42] [INFO] Total execution time: 00:08:55.6753019
